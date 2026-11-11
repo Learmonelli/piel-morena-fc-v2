@@ -104,11 +104,11 @@ export function openPlayerSheet(player) {
             h('a', { href: `#/partido/${m.id}`, onclick: close }, `${fmtDate(m.date)} · ${scoreOf(m, 'A')}:${scoreOf(m, 'B')}`),
             h('span', { class: 'muted' }, `⚽${goalsBy(m, player.id)} 🤝${assistQty(m, player.id)}${ownGoalsBy(m, player.id) ? ` 🙈${ownGoalsBy(m, player.id)}` : ''}`));
         })) : h('p', { class: 'muted' }, 'Todavía no jugó ningún partido.'), { open: true }),
-      h('div', { class: 'row end' },
+      store.canAdmin() ? h('div', { class: 'row end' },
         h('button', { class: 'danger', onclick: async () => {
           if (await confirmDialog(`¿Eliminar a ${player.name}? Se quita de todos los partidos.`, { okLabel: 'Eliminar', danger: true })) {
             store.removePlayer(player.id); close(); toast('Jugador eliminado.');
           }
-        } }, 'Eliminar jugador')));
+        } }, 'Eliminar jugador')) : null);
   });
 }

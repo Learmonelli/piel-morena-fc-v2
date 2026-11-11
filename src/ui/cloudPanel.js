@@ -1,6 +1,8 @@
 // Sección "Nube" de la hoja de datos e indicador de estado del encabezado.
 import { h } from '../dom.js';
-import { checkKey, checkUrl, loadConfig, normalizeUrl, cleanKey, DEFAULT_CONFIG } from '../cloud.js';
+import {
+  checkKey, checkUrl, loadConfig, normalizeUrl, cleanKey, DEFAULT_CONFIG, isAdminUser,
+} from '../cloud.js';
 import { toast } from './toast.js';
 import { confirmDialog } from './sheet.js';
 
@@ -17,15 +19,44 @@ export function statusChip(session, onClick) {
   const paint = () => {
     const s = session.cloud.status();
     const [text, cls] = LABEL[s] || LABEL.off;
+    const admin = isAdminUser(session.cloud.user());
     chip.hidden = s === 'off';
     chip.className = `ghost small icon-btn cloud-chip ${cls}`;
-    chip.setAttribute('aria-label', `Nube: ${text}${session.cloud.detail() ? `. ${session.cloud.detail()}` : ''}`);
+    chip.setAttribute('aria-label', `Nube: ${text}${session.cloud.detail() ? `. ${session.cloud.detail()}` : ''}${admin ? '. Administrador' : ''}`);
     chip.title = chip.getAttribute('aria-label');
-    chip.replaceChildren(h('span', { 'aria-hidden': 'true' }, '☁️'), h('span', { class: 'dot', 'aria-hidden': 'true' }));
+    chip.replaceChildren(h('span', { 'aria-hidden': 'true' }, admin ? '👑' : '☁️'), h('span', { class: 'dot', 'aria-hidden': 'true' }));
   };
   session.cloud.onStatus(paint);
+  session.cloud.onAuth(paint);
   paint();
   return chip;
+}
+
+// Administrador: entrar con GitHub para reabrir/editar partidos finalizados y borrar.
+function adminBox(session, close) {
+  const { cloud } = session;
+  const user = cloud.user();
+  const err = h('p', { class: 'error', role: 'alert' });
+  if (user) {
+    const admin = isAdminUser(user);
+    return h('div', { class: 'admin-box' },
+      h('h3', {}, '👑 Administrador'),
+      h('p', {}, `Entraste como ${user.email || user.user_metadata?.user_name || 'usuario de GitHub'}.`),
+      h('p', { class: admin ? 'admin-note' : 'muted' }, admin
+        ? 'Podés editar y reabrir partidos finalizados, y borrar partidos o jugadores.'
+        : 'Esta cuenta no es la del administrador: no habilita opciones extra.'),
+      h('div', { class: 'row wrap' },
+        h('button', { class: 'ghost', onclick: async () => { await cloud.signOut(); close(); toast('Saliste de la cuenta de GitHub.'); } }, 'Salir')));
+  }
+  return h('div', { class: 'admin-box' },
+    h('h3', {}, '👑 Administrador'),
+    h('p', { class: 'muted' }, 'Para editar o reabrir partidos finalizados y borrar, entrá con tu cuenta de GitHub, como en la app original.'),
+    err,
+    h('div', { class: 'row wrap' },
+      h('button', { onclick: async (e) => {
+        e.currentTarget.disabled = true;
+        try { await cloud.signInWithGitHub(); } catch (ex) { err.textContent = ex.message; e.currentTarget.disabled = false; }
+      } }, 'Entrar con GitHub')));
 }
 
 export function cloudSection(session, close) {
@@ -39,6 +70,7 @@ export function cloudSection(session, close) {
       h('p', {}, h('strong', {}, text), ` · ${cloud.host()}`),
       cloud.detail() ? h('p', { class: 'muted' }, cloud.detail()) : null,
       h('p', { class: 'muted' }, 'Los cambios se guardan en la nube y llegan al instante a los demás celulares.'),
+      adminBox(session, close),
       h('div', { class: 'row wrap' },
         status === 'error' ? h('button', { onclick: () => { cloud.retry(); close(); } }, '↻ Reintentar') : null,
         h('button', { class: 'ghost', onclick: async () => {

@@ -377,6 +377,73 @@ test('si se corta la conexión en vivo y vuelve sola, el indicador regresa a ver
   session.disconnect();
 });
 
+// Cliente falso con Supabase Auth (login con GitHub).
+function withAuth(db, initialUser = null) {
+  let current = initialUser;
+  const subs = new Set();
+  const calls = [];
+  const auth = {
+    getSession: async () => ({ data: { session: current ? { user: current } : null } }),
+    onAuthStateChange: (fn) => { subs.add(fn); return { data: { subscription: { unsubscribe: () => subs.delete(fn) } } }; },
+    signInWithOAuth: async (opts) => { calls.push(opts); return { error: null }; },
+    signOut: async () => { current = null; subs.forEach((fn) => fn('SIGNED_OUT', null)); return { error: null }; },
+  };
+  const login = (u) => { current = u; subs.forEach((fn) => fn('SIGNED_IN', { user: u })); };
+  return { client: { ...db.client, auth }, calls, login };
+}
+
+test('isAdminUser: el email del admin o la marca app_metadata (que el usuario no puede editarse)', async () => {
+  const { isAdminUser } = await import('../src/cloud.js');
+  assert.equal(isAdminUser({ email: 'LeandroArmonelli@gmail.com' }), true);
+  assert.equal(isAdminUser({ email: 'otro@gmail.com', app_metadata: { is_admin: true } }), true);
+  assert.equal(isAdminUser({ email: 'otro@gmail.com', user_metadata: { user_name: 'learmonelli', is_admin: true } }), false); // user_metadata no cuenta
+  assert.equal(isAdminUser(null), false);
+});
+
+test('admin logueado: puede editar partidos finalizados; al salir vuelve a quedar bloqueado', async () => {
+  const db = fakeSupabase({ players: [player('a', 'Ana')], matches: [{ id: 'c1', date: '2026-01-01', teamA: ['a'], teamB: [], events: [], assists: {}, comments: [], closed: true }] });
+  const a = withAuth(db, { email: 'leandroarmonelli@gmail.com' });
+  const cloud = createCloud({ createClient: () => a.client, timers: noTimers });
+  const session = makeSession({ cloud, confirm: async () => true, notify: () => {} });
+  await session.connect(CFG);
+  assert.equal(store.isAdmin(), true);
+  assert.equal(store.canAdmin(), true);
+  assert.ok(store.addGoal('c1', 'A', 'a'), 'el admin carga un gol en un partido finalizado');
+  assert.equal(store.reopenMatch('c1'), true);
+  store.closeMatch('c1');
+  await cloud.signOut();
+  assert.equal(store.isAdmin(), false);
+  assert.equal(store.canAdmin(), false); // con nube y sin admin: no reabre ni borra
+  assert.equal(store.addGoal('c1', 'A', 'a'), null); // vuelve a estar bloqueado
+  session.disconnect();
+});
+
+test('entrar con GitHub: vuelve a la misma página y, al volver, habilita el admin', async () => {
+  const db = fakeSupabase({ players: [], matches: [] });
+  const a = withAuth(db);
+  const cloud = createCloud({ createClient: () => a.client, timers: noTimers });
+  const session = makeSession({ cloud, confirm: async () => true, notify: () => {} });
+  await session.connect(CFG);
+  assert.equal(store.isAdmin(), false);
+  await cloud.signInWithGitHub();
+  assert.equal(a.calls[0].provider, 'github');
+  a.login({ email: 'otro@gmail.com' });
+  assert.equal(store.isAdmin(), false); // otra cuenta de GitHub no es admin
+  a.login({ email: 'leandroarmonelli@gmail.com' });
+  assert.equal(store.isAdmin(), true);
+  session.disconnect();
+  assert.equal(store.isAdmin(), false); // desconectar también saca el admin
+});
+
+test('si el proveedor GitHub no está activado en Supabase, lo explica', async () => {
+  const db = fakeSupabase();
+  const a = withAuth(db);
+  a.client.auth.signInWithOAuth = async () => ({ error: { message: 'Unsupported provider: provider is not enabled' } });
+  const cloud = createCloud({ createClient: () => a.client, timers: noTimers });
+  await cloud.connect(CFG);
+  await assert.rejects(cloud.signInWithGitHub(), /Authentication → Providers → GitHub/);
+});
+
 test('si faltan las tablas, avisa que hay que correr el schema.sql', async () => {
   const db = fakeSupabase();
   const broken = { ...db.client, from: () => ({ select: () => thenable(() => ({ data: null, error: { message: 'relation "public.players" does not exist' } })) }) };

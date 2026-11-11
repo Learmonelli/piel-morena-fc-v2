@@ -27,7 +27,9 @@ export function renderMatch(root, id) {
     return;
   }
   const s = store.get();
-  const locked = m.closed;
+  // Finalizado = bloqueado, salvo para el admin logueado (como en el original).
+  const adminEdit = m.closed && store.isAdmin();
+  const locked = m.closed && !adminEdit;
   const rivalMode = m.mode === 'rival';
   const nameB = rivalMode ? m.rivalName : m.teamBName;
   const byId = (pid) => s.players.find((p) => p.id === pid);
@@ -110,8 +112,12 @@ export function renderMatch(root, id) {
       h('b', { class: 'bscore', 'aria-live': 'polite' }, `${scoreOf(m, 'A')} : ${scoreOf(m, 'B')}`),
       h('span', { class: 'bteam' }, nameB)),
     h('p', { class: 'muted center' },
-      `${fmtDate(m.date)} · ${rivalMode ? 'Contra rival' : 'Interno'} · ${locked ? '🔒 Finalizado' : '● Abierto'}`),
-    locked ? h('p', { class: 'muted center' }, 'Los datos están bloqueados. Podés seguir agregando comentarios.')
+      `${fmtDate(m.date)} · ${rivalMode ? 'Contra rival' : 'Interno'} · ${m.closed ? '🔒 Finalizado' : '● Abierto'}`),
+    adminEdit ? h('p', { class: 'admin-note center' }, '👑 Finalizado, pero lo podés editar porque sos el administrador.') : null,
+    locked ? h('p', { class: 'muted center' },
+      store.canAdmin()
+        ? 'Los datos están bloqueados. Podés seguir agregando comentarios.'
+        : 'Los datos están bloqueados: solo el administrador puede editarlo o reabrirlo (💾 → Entrar con GitHub). Podés seguir agregando comentarios.')
       : h('div', { class: 'row center wrap' },
         rivalMode ? h('button', { class: 'rival-goal', onclick: rivalGoal }, `⚽ Gol de ${m.rivalName}`) : null,
         m.events.length ? h('button', { class: 'ghost', onclick: undoLast }, '↩ Deshacer último') : null));
@@ -303,21 +309,22 @@ export function renderMatch(root, id) {
       const r = await shareSummary(m, s.players);
       if (r === 'downloaded') toast('Imagen descargada. Ya podés mandarla por WhatsApp.');
     } }, '📤 Compartir resumen'),
-    locked
-      ? h('button', { class: 'ghost', onclick: async () => {
+    // Reabrir y eliminar: solo el admin cuando hay nube (la base rechaza al resto).
+    m.closed
+      ? (store.canAdmin() ? h('button', { class: 'ghost', onclick: async () => {
         if (await confirmDialog('¿Reabrir el partido para editarlo?', { okLabel: 'Reabrir' })) { store.reopenMatch(m.id); toast('Partido reabierto.'); }
-      } }, '🔓 Reabrir')
+      } }, '🔓 Reabrir') : null)
       : h('button', { onclick: async () => {
         if (await confirmDialog('Al finalizar, los datos quedan bloqueados (solo se podrán agregar comentarios).', { okLabel: 'Finalizar' })) {
           store.closeMatch(m.id); toast('Partido finalizado.');
         }
       } }, '🏁 Finalizar partido'),
-    h('button', { class: 'danger', onclick: async () => {
+    store.canAdmin() ? h('button', { class: 'danger', onclick: async () => {
       if (await confirmDialog('¿Eliminar este partido? No se puede deshacer.', { okLabel: 'Eliminar', danger: true })) {
         store.deleteMatch(m.id);
         location.hash = '#/partidos';
       }
-    } }, 'Eliminar'));
+    } }, 'Eliminar') : null);
 
   root.replaceChildren(
     h('a', { class: 'back', href: '#/partidos' }, '← Partidos'),

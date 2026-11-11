@@ -75,7 +75,10 @@ returns boolean
 language sql
 stable
 as $$
-  select lower(coalesce(auth.jwt() ->> 'email', '')) = 'leandroarmonelli@gmail.com';
+  select lower(coalesce(auth.jwt() ->> 'email', '')) = 'leandroarmonelli@gmail.com'
+      -- app_metadata solo lo puede cambiar el dueño del proyecto (SQL Editor / service_role),
+      -- nunca el propio usuario: sirve para marcar admin a una cuenta con otro email.
+      or coalesce((auth.jwt() -> 'app_metadata' ->> 'is_admin')::boolean, false);
 $$;
 
 -- Un partido finalizado (data->>'closed' = true) solo puede ser

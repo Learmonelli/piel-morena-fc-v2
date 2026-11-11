@@ -77,8 +77,10 @@ function commitLocal() {
 }
 
 const match = (id) => state.matches.find((m) => m.id === id);
-// Un partido finalizado solo admite comentarios.
-const editable = (m) => !!m && !m.closed;
+// Administrador logueado (con la nube). Como en el original: puede editar partidos finalizados.
+let admin = false;
+// Un partido finalizado solo admite comentarios, salvo para el admin.
+const editable = (m) => !!m && (!m.closed || admin);
 
 function shuffled(arr) {
   const a = [...arr];
@@ -333,6 +335,15 @@ export const store = {
 
   // ---- Nube ----
   isSynced: () => !!sync,
+  isAdmin: () => admin,
+  // Reabrir, eliminar partidos o jugadores: con la nube, solo el admin (la base lo exige);
+  // sin nube (solo este navegador) no hay a quién pedirle permiso.
+  canAdmin: () => !sync || admin,
+  setAdmin(value) {
+    if (admin === !!value) return;
+    admin = !!value;
+    listeners.forEach((fn) => fn(state));
+  },
   // Conecta el adaptador. `data` es lo que hay en la nube (pasa a ser la fuente de verdad).
   // Con uploadLocal: true, la nube está vacía y se suben los datos que ya tenía este navegador.
   attachSync(adapter, data, { uploadLocal = false } = {}) {
@@ -344,7 +355,7 @@ export const store = {
     commitLocal();
     store.autoCloseOld(); // los partidos viejos que sigan abiertos se cierran (y se sincronizan)
   },
-  detachSync() { sync = null; synced = new Map(); },
+  detachSync() { sync = null; synced = new Map(); store.setAdmin(false); },
   // Aplica un cambio que vino de la nube (de otro dispositivo, o la versión real tras un rechazo).
   // row = null significa que la fila ya no existe.
   applyRemote(table, row, id) {

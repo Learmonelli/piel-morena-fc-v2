@@ -458,6 +458,30 @@ test('ficha, tabla y ranking incluyen los goles en contra', () => {
   assert.ok(options.some((t) => /Goles en contra/.test(t)));
 });
 
+test('con la nube y sin admin: un finalizado no se puede reabrir ni eliminar, y lo explica', () => {
+  const closed = store.get().matches.find((m) => m.closed);
+  const fake = { upsert() {}, remove() {} };
+  store.attachSync(fake, { players: store.get().players, matches: store.get().matches });
+  try {
+    renderMatch(root, closed.id);
+    const texts = [...root.querySelectorAll('button')].map((b) => b.textContent);
+    assert.ok(!texts.some((t) => /Reabrir/.test(t)));
+    assert.ok(!texts.some((t) => t === 'Eliminar'));
+    assert.match(root.textContent, /solo el administrador puede editarlo o reabrirlo/);
+    assert.equal(root.querySelectorAll('.act').length, 0);
+    // Como admin: se edita sin reabrir, y aparecen Reabrir y Eliminar.
+    store.setAdmin(true);
+    renderMatch(root, closed.id);
+    const t2 = [...root.querySelectorAll('button')].map((b) => b.textContent);
+    assert.ok(t2.some((t) => /Reabrir/.test(t)));
+    assert.ok(t2.includes('Eliminar'));
+    assert.ok(root.querySelectorAll('.act').length > 0, 'el admin tiene los botones de gol');
+    assert.match(root.textContent, /sos el administrador/);
+  } finally {
+    store.detachSync();
+  }
+});
+
 test('partido finalizado: sin botones de carga y con comentarios', () => {
   const closed = store.get().matches.find((m) => m.closed);
   renderMatch(root, closed.id);

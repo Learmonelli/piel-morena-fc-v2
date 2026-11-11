@@ -19,6 +19,12 @@ export const DEFAULT_CONFIG = {
   key: 'sb_publishable_BbY4PgfsKHP7K8J4Zz7UIA_Gjbm8VNw',
 };
 
+// Administrador: el mismo criterio que public.is_admin() en supabase/schema.sql. Esto solo decide
+// qué botones se muestran; quien de verdad permite o rechaza es la base (RLS y trigger).
+export const ADMIN_EMAIL = 'leandroarmonelli@gmail.com';
+export const isAdminUser = (user) => !!user && (
+  String(user.email || '').toLowerCase() === ADMIN_EMAIL || user.app_metadata?.is_admin === true);
+
 // ---- Configuración ----
 // La que guardó este navegador (pegada a mano), o null.
 export function loadConfig() {
@@ -114,6 +120,9 @@ export function createCloud({ createClient, timers = globalThis } = {}) {
   let flushing = false;
   let running = null; // promesa del envío en curso
   let liveDown = false; // la conexión en vivo (Realtime) está caída
+  let user = null; // usuario logueado con GitHub (solo para el admin)
+  const authListeners = new Set();
+  let authSub = null;
   let retryTimer = null;
   let retryDelay = 2000;
   let onRemote = () => {};
@@ -230,7 +239,23 @@ export function createCloud({ createClient, timers = globalThis } = {}) {
       onReject = handlers.onReject || onReject;
       setStatus('connecting');
       try {
-        client = createClient(normalizeUrl(cfg.url), cleanKey(cfg.key), { auth: { persistSession: false } });
+        // La sesión del admin se guarda en este navegador. detectSessionInUrl completa el regreso
+        // desde GitHub (el ?code=... que agrega Supabase al volver).
+        client = createClient(normalizeUrl(cfg.url), cleanKey(cfg.key), {
+          auth: { persistSession: true, storageKey: 'pm2-auth', detectSessionInUrl: true, flowType: 'pkce' },
+        });
+        if (client.auth) {
+          const { data: s } = await client.auth.getSession();
+          user = s?.session?.user ?? null;
+          authSub = client.auth.onAuthStateChange((_evt, session) => {
+            user = session?.user ?? null;
+            authListeners.forEach((fn) => fn(user));
+          })?.data?.subscription ?? null;
+          // Al volver de GitHub se limpia el ?code=... de la barra de direcciones.
+          if (typeof location !== 'undefined' && /[?&]code=/.test(location.search) && typeof history !== 'undefined') {
+            history.replaceState(null, '', location.pathname + location.hash);
+          }
+        }
         const data = await fetchAll();
         return data;
       } catch (e) {
@@ -270,6 +295,23 @@ export function createCloud({ createClient, timers = globalThis } = {}) {
       remove: (table, id) => enqueue(table, { op: 'delete', id }),
     },
 
+    // ---- Administrador (GitHub) ----
+    user: () => user,
+    onAuth(fn) { authListeners.add(fn); return () => authListeners.delete(fn); },
+    async signInWithGitHub() {
+      if (!client?.auth) throw new Error('Primero conectá la nube.');
+      const redirectTo = typeof location !== 'undefined' ? location.origin + location.pathname : undefined;
+      const { error } = await client.auth.signInWithOAuth({ provider: 'github', options: { redirectTo } });
+      if (error) throw new Error(/provider is not enabled|Unsupported provider/i.test(error.message)
+        ? 'El login con GitHub no está activado en este proyecto de Supabase (Authentication → Providers → GitHub).'
+        : error.message);
+    },
+    async signOut() {
+      if (client?.auth) await client.auth.signOut();
+      user = null;
+      authListeners.forEach((fn) => fn(null));
+    },
+
     retry: () => { retryDelay = 2000; return flush(); },
     // Espera a que se vacíe la cola (o a que quede en error esperando reintento).
     whenIdle: async () => {
@@ -281,6 +323,9 @@ export function createCloud({ createClient, timers = globalThis } = {}) {
 
     disconnect() {
       if (channel && client) client.removeChannel(channel);
+      authSub?.unsubscribe?.();
+      authSub = null;
+      if (user) { user = null; authListeners.forEach((fn) => fn(null)); }
       channel = null; client = null; queue.clear();
       if (retryTimer) { timers.clearTimeout(retryTimer); retryTimer = null; }
       setStatus('off');

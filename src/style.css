@@ -420,3 +420,7 @@ dialog.confirm { padding: 18px; border-radius: 18px; margin: auto; }
 [data-theme="pixel"] .list-heading { font-family: var(--font-pixel); font-size: 10px; line-height: 1.7; text-shadow: 2px 2px 0 rgba(0, 0, 0, .5); }
 .guest-pill { justify-self: start; width: fit-content; margin-top: 2px; }
 .fold.guests { margin-top: 10px; }
+
+/* Administrador */
+.admin-box { margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--line); }
+.admin-note { color: var(--gold); font-size: .9rem; }
