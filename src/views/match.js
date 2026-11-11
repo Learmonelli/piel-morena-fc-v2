@@ -175,7 +175,7 @@ export function renderMatch(root, id) {
         const cur = sideOf(m, p.id) || '';
         return h('li', { class: 'prow' },
           avatarEl(p, TEAM, 32),
-          h('div', { class: 'pinfo' }, playerName(p), p.guest ? h('span', { class: 'pill' }, 'invitado') : null),
+          h('div', { class: 'pinfo' }, playerName(p)),
           h('div', { class: 'seg-btns', role: 'group', 'aria-label': `Equipo de ${p.name}` },
             choices.map(([val, text]) => h('button', {
               class: `seg-btn ${val ? `side-${val}` : 'side-none'} ${cur === val ? 'on' : ''}`,

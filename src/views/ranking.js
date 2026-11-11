@@ -60,7 +60,8 @@ export function renderRanking(root) {
         h('thead', {}, h('tr', {}, h('th', { scope: 'col' }, 'Jugador'),
           cols.map(([short, long]) => h('th', { scope: 'col' }, h('abbr', { title: long }, short))))),
         h('tbody', {}, ps.map((p) => h('tr', {},
-          h('th', { scope: 'row' }, h('button', { class: 'linklike inline', onclick: () => open(p) }, nameOf(p))),
+          h('th', { scope: 'row' }, h('button', { class: 'linklike inline', onclick: () => open(p) }, nameOf(p),
+            p.guest ? h('span', { class: 'pill guest-pill' }, 'invitado') : null)),
           cols.map(([, , k]) => h('td', {}, String(st[p.id][k]))))))))
         : h('p', { class: 'muted' }, 'Nadie coincide con la búsqueda.'),
       { cls: 'sec', force: !!q }));

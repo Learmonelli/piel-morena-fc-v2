@@ -10,5 +10,7 @@ export function playerName(p, { stacked = false } = {}) {
     p.number ? h('span', { class: 'num' }, h('span', { class: 'sr-only' }, 'Camiseta '), p.number) : null,
     h('span', { class: 'ptxt' },
       h('strong', { class: 'pname-main' }, displayName(p)),
-      nick ? h('span', { class: 'nick' }, `«${nick}»`) : null));
+      nick ? h('span', { class: 'nick' }, `«${nick}»`) : null,
+      // Como el original (invBadge): los invitados llevan su marca en todas las listas.
+      p.guest ? h('span', { class: 'pill guest-pill' }, 'invitado') : null));
 }

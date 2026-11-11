@@ -414,3 +414,9 @@ dialog.confirm { padding: 18px; border-radius: 18px; margin: auto; }
 .cloud-chip.busy .dot { background: var(--gold); }
 .cloud-chip.err .dot { background: var(--danger); }
 [data-theme="pixel"] .cloud-chip .dot { border-radius: 0; }
+
+/* Jugadores: título del plantel e invitados aparte */
+.list-heading { font-size: 1rem; margin: 6px 0 8px; color: var(--gold); }
+[data-theme="pixel"] .list-heading { font-family: var(--font-pixel); font-size: 10px; line-height: 1.7; text-shadow: 2px 2px 0 rgba(0, 0, 0, .5); }
+.guest-pill { justify-self: start; width: fit-content; margin-top: 2px; }
+.fold.guests { margin-top: 10px; }

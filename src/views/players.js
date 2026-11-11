@@ -36,15 +36,28 @@ export function renderPlayers(root) {
           s.matches.length ? null : h('button', { class: 'ghost', onclick: () => store.loadDemo() }, 'Probar con datos de ejemplo'))));
       return;
     }
+    // Como en la app original: el Plantel por un lado (agrupado por línea) y los Invitados aparte.
+    const roster = found.filter((p) => !p.guest);
+    const guests = found.filter((p) => p.guest);
     const names = [...POSITION_GROUPS.map(([n]) => n), 'Sin posición'];
-    fill(list, names.map((g, i) => {
-      const items = found.filter((p) => groupOfPlayer(p) === g);
+    const groups = names.map((g, i) => {
+      const items = roster.filter((p) => groupOfPlayer(p) === g);
       if (!items.length) return null;
       return collapsible(`pg:${g}`,
         [h('strong', { class: 'fold-title' }, g), h('span', { class: 'muted' }, `${items.length}`)],
         h('ul', { class: 'pgrid' }, items.map(card)),
-        { open: s.players.length <= 16 || i === 0, force: !!q, cls: 'sec' });
-    }));
+        { open: roster.length <= 16 || i === 0, force: !!q, cls: 'sec' });
+    });
+    fill(list,
+      roster.length ? h('h2', { class: 'list-heading' }, `Plantel (${roster.length})`) : null,
+      groups,
+      guests.length
+        ? collapsible('pg:invitados',
+          [h('strong', { class: 'fold-title' }, 'Invitados'), h('span', { class: 'muted' }, `${guests.length}`)],
+          [h('p', { class: 'muted small-note' }, 'Jugaron algún partido sin ser del plantel.'),
+            h('ul', { class: 'pgrid' }, guests.map(card))],
+          { open: false, force: !!q, cls: 'sec guests' })
+        : null);
   };
 
   root.replaceChildren(

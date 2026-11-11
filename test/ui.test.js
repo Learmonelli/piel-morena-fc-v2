@@ -628,6 +628,38 @@ test('ranking: el podio de la pantalla usa el componente nuevo y la lista usa n�
   sel.dispatchEvent(new window.Event('change', { bubbles: true }));
 });
 
+test('jugadores: el plantel por un lado y los invitados aparte, como el original', () => {
+  const m = store.get().matches.find((x) => x.mode === 'interno' && !x.closed);
+  const g1 = store.addGuest(m.id, 'Primo Invitado', 'A');
+  const g2 = store.addGuest(m.id, 'Vecino Invitado', 'B');
+  renderPlayers(root);
+  const heading = root.querySelector('.list-heading');
+  const roster = store.get().players.filter((p) => !p.guest).length;
+  assert.equal(heading.textContent, `Plantel (${roster})`);
+  const guestsFold = root.querySelector('details.fold.guests');
+  assert.ok(guestsFold, 'hay sección de invitados');
+  assert.match(guestsFold.querySelector('summary').textContent, /Invitados\s*2/);
+  assert.equal(guestsFold.open, false); // plegada por defecto
+  const inGuests = [...guestsFold.querySelectorAll('.pcard strong')].map((e) => e.textContent).sort();
+  assert.deepEqual(inGuests, ['Primo Invitado', 'Vecino Invitado']);
+  // Fuera de la sección de invitados no aparece ninguno (ni en "Sin posición").
+  const outside = [...root.querySelectorAll('details.fold:not(.guests) .pcard strong')].map((e) => e.textContent);
+  assert.ok(!outside.includes('Primo Invitado') && !outside.includes('Vecino Invitado'));
+  assert.ok([...guestsFold.querySelectorAll('.pcard')].every((c) => c.querySelector('.guest-pill')?.textContent === 'invitado'));
+  // Al buscar un invitado, la sección se abre sola.
+  type(root.querySelector('.search input'), 'primo');
+  assert.equal(root.querySelector('details.fold.guests').open, true);
+  type(root.querySelector('.search input'), '');
+  // La marca "invitado" también aparece en Armar equipos y en la tabla del ranking.
+  renderMatch(root, m.id);
+  assert.ok([...root.querySelectorAll('.teams-box .prow')].some((r) => r.textContent.includes('Primo Invitado') && r.querySelector('.guest-pill')));
+  renderRanking(root);
+  const table = root.querySelector('.table');
+  assert.ok([...table.querySelectorAll('tbody th')].some((th) => th.textContent.includes('Primo Invitado') && th.querySelector('.guest-pill')));
+  store.removePlayer(g1.id);
+  store.removePlayer(g2.id);
+});
+
 test('jugadores: grupos por posición y búsqueda', () => {
   renderPlayers(root);
   assert.equal(root.querySelectorAll('.pcard').length, 12);
