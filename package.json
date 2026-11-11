@@ -1,0 +1,21 @@
+{
+  "name": "piel-morena-v2",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "vite build",
+    "preview": "vite preview --host 127.0.0.1",
+    "test": "node --test \"test/**/*.test.js\""
+  },
+  "dependencies": {
+    "@fontsource/press-start-2p": "5.3.0",
+    "@fontsource/vt323": "5.3.0",
+    "@supabase/supabase-js": "2.119.0"
+  },
+  "devDependencies": {
+    "jsdom": "31.0.0",
+    "vite": "8.3.8"
+  }
+}

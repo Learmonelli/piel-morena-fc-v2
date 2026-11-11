@@ -1,0 +1,141 @@
+/* Modo Pixel = tema "Cancha arcade" de la app original (mismos colores, bordes y tipografías).
+   Solo se activa con data-theme="pixel". */
+[data-theme="pixel"] {
+  --bg: #0c2814; --bg2: #0c2814; --card: #3f111e; --card-2: #52182a; --edge: #240a12;
+  --wine: #8a2334; --wine-2: #52182a; --gold: #ffd23f; --gold-d: #d9a400; --gold-ink: #2a1706;
+  --text: #eafff0; --muted: #9fd3ac; --line: #7a2a3c; --danger: #ff5a5f; --ok: #5fd35f; --radius: 12px;
+  --font-body: 'VT323', ui-monospace, Consolas, monospace;
+  --font-pixel: 'Press Start 2P', ui-monospace, Consolas, monospace;
+  --solid: #3a1424; --field: #320d18;
+}
+[data-theme="pixel"] body {
+  font-family: var(--font-body); font-size: 19px; letter-spacing: .3px; line-height: 1.2;
+  background: radial-gradient(1200px 600px at 50% -200px, #1c5a33 0%, var(--bg) 60%) fixed;
+}
+[data-theme="pixel"] #pitch-bg { display: block; }
+
+/* Tipografía: títulos en Press Start 2P, como el original */
+[data-theme="pixel"] h1, [data-theme="pixel"] h2, [data-theme="pixel"] h3,
+[data-theme="pixel"] .brand-name, [data-theme="pixel"] .bottom-nav a, [data-theme="pixel"] .fold-title,
+[data-theme="pixel"] .face-group > summary, [data-theme="pixel"] .res {
+  font-family: var(--font-pixel); font-weight: 400; letter-spacing: 0;
+}
+[data-theme="pixel"] .page-title { font-size: 12px; line-height: 1.75; color: var(--gold); text-shadow: 2px 2px 0 rgba(0, 0, 0, .5); }
+[data-theme="pixel"] h2, [data-theme="pixel"] h3, [data-theme="pixel"] .fold-h2, [data-theme="pixel"] .card-title {
+  font-size: 10px; line-height: 1.7; letter-spacing: .5px;
+}
+[data-theme="pixel"] .fold-title { font-size: 9px; line-height: 1.7; }
+[data-theme="pixel"] .brand-name { font-size: 12px; line-height: 1.75; margin: 0; }
+[data-theme="pixel"] .brand-sub { font-size: 16px; margin: 0; }
+[data-theme="pixel"] .muted { font-size: 17px; }
+[data-theme="pixel"] .sheet-head h2 { font-size: 10px; }
+
+/* Encabezado y navegación */
+[data-theme="pixel"] .app-header { background: rgba(12, 40, 20, .92); border-bottom: 3px solid var(--edge); }
+[data-theme="pixel"] .bottom-nav { background: #330f1c; border-top: 3px solid var(--edge); backdrop-filter: none; }
+[data-theme="pixel"] .bottom-nav a { font-size: 8px; line-height: 1.6; border-radius: 10px; color: var(--muted); }
+[data-theme="pixel"] .bottom-nav a .ico { font-size: 20px; }
+[data-theme="pixel"] .bottom-nav a[aria-current="page"] { background: var(--card-2); color: var(--text); box-shadow: 0 2px 8px rgba(0, 0, 0, .25), inset 0 -3px 0 var(--gold); }
+
+/* Paneles: borde oscuro de 3px y sombra escalonada */
+[data-theme="pixel"] .card, [data-theme="pixel"] .pcard, [data-theme="pixel"] dialog.sheet, [data-theme="pixel"] .toast {
+  background: var(--card); border: 3px solid var(--edge); border-radius: 12px; box-shadow: 6px 6px 0 rgba(0, 0, 0, .42);
+}
+[data-theme="pixel"] .match-card { background: var(--card); }
+[data-theme="pixel"] .match-card:hover { border-color: var(--gold); }
+[data-theme="pixel"] .board { background: linear-gradient(180deg, var(--card-2), var(--card)); }
+[data-theme="pixel"] .bscore { font-size: 48px; font-family: var(--font-body); font-weight: 800; }
+[data-theme="pixel"] .mc-result { font-size: 38px; font-family: var(--font-body); font-weight: 800; }
+[data-theme="pixel"] .sheet-head { border-bottom: 3px solid var(--edge); }
+[data-theme="pixel"] .stat { background: #320d18; border: 2px solid var(--edge); border-bottom: 3px solid var(--gold-d); }
+[data-theme="pixel"] .stat b { font-size: 28px; font-family: var(--font-body); }
+[data-theme="pixel"] .stat span { font-size: 14px; letter-spacing: 0; }
+[data-theme="pixel"] .step {
+  background: linear-gradient(180deg, var(--card-2), var(--card)); border: 3px solid var(--medal); border-bottom: 0; border-radius: 0;
+  box-shadow: 4px 0 0 rgba(0, 0, 0, .45);
+}
+[data-theme="pixel"] .step.place-center { box-shadow: 4px 0 0 rgba(0, 0, 0, .45), 0 -6px 0 color-mix(in srgb, var(--medal) 35%, transparent); }
+[data-theme="pixel"] .step .val { font-size: 32px; font-family: var(--font-body); }
+[data-theme="pixel"] .step.place-center .val { font-size: 40px; }
+[data-theme="pixel"] .step strong { font-family: var(--font-body); font-size: 22px; }
+[data-theme="pixel"] .pod-num { border-top: 3px solid #000; }
+[data-theme="pixel"] .pod-num b { font-family: var(--font-pixel); font-size: 16px; line-height: 1.4; }
+[data-theme="pixel"] .step.place-center .pod-num b { font-size: 22px; }
+[data-theme="pixel"] .pod-num small { font-family: var(--font-body); font-size: 17px; letter-spacing: 0; }
+[data-theme="pixel"] .emblem { border-radius: 0; border: 3px solid #000; box-shadow: 3px 3px 0 rgba(0, 0, 0, .5); }
+[data-theme="pixel"] .wreath { shape-rendering: crispEdges; }
+[data-theme="pixel"] .leaf { stroke: #000; stroke-width: .8; }
+
+/* Botones: dorados con sombra de bloque, texto en mayúscula */
+[data-theme="pixel"] button, [data-theme="pixel"] .btn {
+  border-radius: 8px; font-family: var(--font-body); font-size: 19px; letter-spacing: .5px; text-transform: uppercase;
+  background: linear-gradient(145deg, #ffd23f, var(--gold-d)); color: var(--gold-ink); box-shadow: 3px 3px 0 rgba(0, 0, 0, .5);
+}
+[data-theme="pixel"] button.ghost, [data-theme="pixel"] .btn.ghost {
+  background: var(--solid); color: var(--text); border: 2px solid var(--line); box-shadow: 3px 3px 0 rgba(0, 0, 0, .5);
+}
+[data-theme="pixel"] button.ghost:hover:not(:disabled), [data-theme="pixel"] .btn.ghost:hover { background: #4d1a2e; }
+[data-theme="pixel"] .rival-goal { background: #c0345f; color: #fff; border: 2px solid #000; }
+[data-theme="pixel"] button.danger { background: transparent; color: var(--danger); border: 2px solid #5a2028; box-shadow: 3px 3px 0 rgba(0, 0, 0, .3); }
+[data-theme="pixel"] .act { font-size: 24px; }
+[data-theme="pixel"] .linklike, [data-theme="pixel"] .seg-btn,
+[data-theme="pixel"] .face-pill, [data-theme="pixel"] .swatch, [data-theme="pixel"] .chip-btn {
+  box-shadow: none; text-transform: none;
+}
+[data-theme="pixel"] .linklike, [data-theme="pixel"] .seg-btn { background: transparent; }
+[data-theme="pixel"] .linklike { color: inherit; letter-spacing: 0; }
+/* Pastillas con fondo opaco: se leen bien aunque queden sobre la canchita */
+[data-theme="pixel"] .chip-btn, [data-theme="pixel"] .face-pill { background: var(--solid); }
+[data-theme="pixel"] .chip-btn { color: var(--text); border: 2px solid var(--line); font-size: 17px; }
+[data-theme="pixel"] .seg-btns { background: var(--solid); }
+[data-theme="pixel"] .chip-btn.on, [data-theme="pixel"] .seg-btn.on {
+  background: var(--gold); color: var(--gold-ink); border-color: var(--gold);
+}
+[data-theme="pixel"] .seg-btn { color: var(--text); font-size: 17px; }
+
+/* Campos */
+[data-theme="pixel"] input, [data-theme="pixel"] select, [data-theme="pixel"] textarea {
+  background: #320d18; border: 2px solid var(--edge); border-radius: 8px; font-family: var(--font-body); font-size: 19px;
+}
+[data-theme="pixel"] .chip, [data-theme="pixel"] .pill { background: #320d18; border: 2px solid var(--line); }
+[data-theme="pixel"] .tag { font-size: 14px; }
+
+/* Separadores de listas */
+[data-theme="pixel"] .rank-list li, [data-theme="pixel"] .prow, [data-theme="pixel"] .history li,
+[data-theme="pixel"] .comments li, [data-theme="pixel"] .table th, [data-theme="pixel"] .table td {
+  border-bottom-color: rgba(255, 255, 255, .09);
+}
+[data-theme="pixel"] .table th[scope="row"] { background: var(--card); }
+[data-theme="pixel"] .fold.sec { border-bottom: 2px solid var(--line); }
+[data-theme="pixel"] .res { font-size: 9px; }
+
+/* Tabla del ranking en panel vinotinto, con filas alternadas y columna de nombres fija */
+[data-theme="pixel"] .table { font-size: 18px; }
+[data-theme="pixel"] .table thead th { font-size: 15px; color: var(--gold); border-bottom: 2px solid var(--line); }
+[data-theme="pixel"] .table th[scope="row"] { background: var(--card); }
+[data-theme="pixel"] .table tbody tr:nth-child(even) td,
+[data-theme="pixel"] .table tbody tr:nth-child(even) th[scope="row"] { background: var(--card-2); }
+
+[data-theme="pixel"] .seg-btn.side-A.on { background: var(--gold); color: var(--gold-ink); border-color: var(--gold); }
+[data-theme="pixel"] .seg-btn.side-B.on { background: #c0345f; color: #fff; border-color: #c0345f; }
+[data-theme="pixel"] .seg-btn.side-none.on { background: rgba(255, 255, 255, .14); color: var(--muted); border-color: transparent; }
+
+/* Encabezados de sección plegable: panel propio, no texto suelto sobre la cancha */
+[data-theme="pixel"] .fold.sec { border-bottom: 0; margin-bottom: 10px; }
+[data-theme="pixel"] .fold.sec > summary {
+  background: var(--card); border: 3px solid var(--edge); border-radius: 12px; padding: 0 14px; margin-bottom: 8px;
+  box-shadow: 4px 4px 0 rgba(0, 0, 0, .42);
+}
+[data-theme="pixel"] .fold.sec > .fold-body { padding-top: 0; }
+
+/* Texto legible: los botones que NO son dorados no deben heredar el marrón oscuro de los botones dorados */
+[data-theme="pixel"] .pcard { color: var(--text); background: var(--card); text-transform: none; letter-spacing: 0; font-size: 19px; }
+[data-theme="pixel"] .pcard strong { font-size: 22px; color: var(--text); }
+[data-theme="pixel"] .pcard:hover { border-color: var(--gold); }
+[data-theme="pixel"] .face-pill { color: var(--text); }
+[data-theme="pixel"] .face-pill.on { color: var(--gold-ink); background: var(--gold); }
+
+/* Etiquetas de premios en la lista de partidos */
+[data-theme="pixel"] .tags .tag { font-family: var(--font-body); font-size: 16px; padding: 2px 8px; border: 2px solid #000; border-radius: 0; letter-spacing: 0; }
+[data-theme="pixel"] .mc-top > .muted { font-size: 16px; }
+[data-theme="pixel"] .pod-avg { font-family: var(--font-body); font-size: 17px; }
