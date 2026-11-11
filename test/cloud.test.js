@@ -458,6 +458,31 @@ test('entrar con GitHub: vuelve a la misma página y, al volver, habilita el adm
   assert.equal(store.isAdmin(), false); // desconectar también saca el admin
 });
 
+test('GitHub sin activar: avisa ANTES de salir de la app (no deja al usuario en la página de error)', async () => {
+  const db = fakeSupabase();
+  const a = withAuth(db);
+  const cloud = createCloud({ createClient: () => a.client, timers: noTimers });
+  await cloud.connect(CFG);
+  const realFetch = globalThis.fetch;
+  let asked = '';
+  globalThis.fetch = async (url) => { asked = url; return { ok: true, json: async () => ({ external: { github: false } }) }; };
+  try {
+    await assert.rejects(cloud.signInWithGitHub(), /todavía no está activado/);
+    assert.equal(asked, 'https://prueba.supabase.co/auth/v1/settings');
+    assert.equal(a.calls.length, 0); // no se intentó ir a GitHub
+    // Activado: sí va a GitHub.
+    globalThis.fetch = async () => ({ ok: true, json: async () => ({ external: { github: true } }) });
+    await cloud.signInWithGitHub();
+    assert.equal(a.calls.length, 1);
+    // Si la consulta falla (sin red), se intenta igual.
+    globalThis.fetch = async () => { throw new Error('sin red'); };
+    await cloud.signInWithGitHub();
+    assert.equal(a.calls.length, 2);
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});
+
 test('si el proveedor GitHub no está activado en Supabase, lo explica', async () => {
   const db = fakeSupabase();
   const a = withAuth(db);

@@ -121,6 +121,7 @@ export function createCloud({ createClient, timers = globalThis } = {}) {
   let running = null; // promesa del envío en curso
   let liveDown = false; // la conexión en vivo (Realtime) está caída
   let user = null; // usuario logueado con GitHub (solo para el admin)
+  let current = null; // { url, key } de la conexión activa
   const authListeners = new Set();
   let authSub = null;
   let retryTimer = null;
@@ -237,6 +238,7 @@ export function createCloud({ createClient, timers = globalThis } = {}) {
       if (urlErr || keyErr) throw new Error(urlErr || keyErr);
       onRemote = handlers.onRemote || onRemote;
       onReject = handlers.onReject || onReject;
+      current = { url: cfg.url, key: cfg.key };
       setStatus('connecting');
       try {
         // La sesión del admin se guarda en este navegador. detectSessionInUrl completa el regreso
@@ -300,6 +302,20 @@ export function createCloud({ createClient, timers = globalThis } = {}) {
     onAuth(fn) { authListeners.add(fn); return () => authListeners.delete(fn); },
     async signInWithGitHub() {
       if (!client?.auth) throw new Error('Primero conectá la nube.');
+      // Antes de salir hacia GitHub se consulta si el proveedor está activado: si no, Supabase
+      // deja al usuario en una página de error en JSON ("provider is not enabled").
+      if (current && typeof fetch === 'function') {
+        try {
+          const res = await fetch(`${normalizeUrl(current.url)}/auth/v1/settings`, { headers: { apikey: cleanKey(current.key) } });
+          const settings = res.ok ? await res.json() : null;
+          if (settings && settings.external && settings.external.github === false) {
+            throw new Error('El login con GitHub todavía no está activado en este proyecto de Supabase '
+              + '(Authentication → Sign In / Providers → GitHub).');
+          }
+        } catch (e) {
+          if (/todavía no está activado/.test(e.message)) throw e; // si falla la consulta, se intenta igual
+        }
+      }
       const redirectTo = typeof location !== 'undefined' ? location.origin + location.pathname : undefined;
       const { error } = await client.auth.signInWithOAuth({ provider: 'github', options: { redirectTo } });
       if (error) throw new Error(/provider is not enabled|Unsupported provider/i.test(error.message)
