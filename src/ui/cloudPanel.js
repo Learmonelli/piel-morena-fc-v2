@@ -1,7 +1,7 @@
 // Sección "Nube" de la hoja de datos e indicador de estado del encabezado.
 import { h } from '../dom.js';
 import {
-  checkKey, checkUrl, loadConfig, normalizeUrl, cleanKey, DEFAULT_CONFIG, isAdminUser,
+  checkKey, checkUrl, loadConfig, normalizeUrl, cleanKey, DEFAULT_CONFIG, isAdminUser, ADMIN_EMAIL,
 } from '../cloud.js';
 import { toast } from './toast.js';
 import { confirmDialog } from './sheet.js';
@@ -37,6 +37,7 @@ function adminBox(session, close) {
   const { cloud } = session;
   const user = cloud.user();
   const err = h('p', { class: 'error', role: 'alert' });
+  const emailInput = h('input', { type: 'email', value: ADMIN_EMAIL, autocomplete: 'email', 'aria-label': 'Email del administrador' });
   if (user) {
     const admin = isAdminUser(user);
     return h('div', { class: 'admin-box' },
@@ -50,10 +51,18 @@ function adminBox(session, close) {
   }
   return h('div', { class: 'admin-box' },
     h('h3', {}, '👑 Administrador'),
-    h('p', { class: 'muted' }, 'Para editar o reabrir partidos finalizados y borrar, entrá con tu cuenta de GitHub, como en la app original.'),
+    h('p', { class: 'muted' }, 'Para editar o reabrir partidos finalizados y borrar, pedí un link de acceso a tu email.'),
+    emailInput,
     err,
     h('div', { class: 'row wrap' },
       h('button', { onclick: async (e) => {
+        const btn = e.currentTarget;
+        btn.disabled = true; err.textContent = '';
+        try { await cloud.signInWithEmail(emailInput.value); toast('Listo: revisá tu email y tocá el link.'); }
+        catch (ex) { err.textContent = ex.message; }
+        btn.disabled = false;
+      } }, 'Enviar link a mi email'),
+      h('button', { class: 'ghost', onclick: async (e) => {
         e.currentTarget.disabled = true;
         try { await cloud.signInWithGitHub(); } catch (ex) { err.textContent = ex.message; e.currentTarget.disabled = false; }
       } }, 'Entrar con GitHub')));

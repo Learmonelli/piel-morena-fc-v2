@@ -322,6 +322,15 @@ export function createCloud({ createClient, timers = globalThis } = {}) {
         ? 'El login con GitHub no está activado en este proyecto de Supabase (Authentication → Providers → GitHub).'
         : error.message);
     },
+    // Link mágico por email: no requiere ningún proveedor externo.
+    async signInWithEmail(email) {
+      if (!client?.auth) throw new Error('Primero conectá la nube.');
+      const addr = String(email || '').trim();
+      if (!addr) throw new Error('Escribí tu email.');
+      const emailRedirectTo = typeof location !== 'undefined' ? location.origin + location.pathname : undefined;
+      const { error } = await client.auth.signInWithOtp({ email: addr, options: { emailRedirectTo } });
+      if (error) throw new Error(error.message);
+    },
     async signOut() {
       if (client?.auth) await client.auth.signOut();
       user = null;
