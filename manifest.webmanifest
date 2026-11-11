@@ -1,0 +1,10 @@
+{
+  "name": "Piel Morena FC",
+  "short_name": "Piel Morena",
+  "description": "Estadísticas del equipo Piel Morena FC",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#0c2814",
+  "theme_color": "#0c2814",
+  "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
+}
