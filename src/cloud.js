@@ -8,19 +8,41 @@
 //   esa fila para que la pantalla muestre lo que de verdad quedó guardado.
 
 const CFG_KEY = 'pm2_sbconfig';
+const OFF_KEY = 'pm2_sbconfig_off'; // el usuario desconectó a propósito: no reconectar sola
 export const TABLES = ['players', 'matches'];
 
+// Nube del equipo, preconfigurada para que cualquier celular o compu vea los datos sin pegar nada
+// (igual que DEFAULT_SB_CONFIG en la app original). La clave publishable es pública por diseño:
+// la seguridad la dan las políticas RLS del schema.sql, no esconder esta clave.
+export const DEFAULT_CONFIG = {
+  url: 'https://sylhlksbxnjwswgjohbp.supabase.co',
+  key: 'sb_publishable_BbY4PgfsKHP7K8J4Zz7UIA_Gjbm8VNw',
+};
+
 // ---- Configuración ----
+// La que guardó este navegador (pegada a mano), o null.
 export function loadConfig() {
   try {
     const c = JSON.parse(localStorage.getItem(CFG_KEY));
     return c && typeof c.url === 'string' && typeof c.key === 'string' ? c : null;
   } catch { return null; }
 }
+// La que se usa: la guardada; si no hay, la del equipo; null si el usuario desconectó.
+export function effectiveConfig() {
+  const saved = loadConfig();
+  if (saved) return saved;
+  try { if (localStorage.getItem(OFF_KEY) === '1') return null; } catch { /* sin almacenamiento */ }
+  return DEFAULT_CONFIG;
+}
 export function saveConfig(cfg) {
   try {
-    if (cfg) localStorage.setItem(CFG_KEY, JSON.stringify({ url: cfg.url, key: cfg.key }));
-    else localStorage.removeItem(CFG_KEY);
+    if (cfg) {
+      localStorage.setItem(CFG_KEY, JSON.stringify({ url: cfg.url, key: cfg.key }));
+      localStorage.removeItem(OFF_KEY);
+    } else {
+      localStorage.removeItem(CFG_KEY);
+      localStorage.setItem(OFF_KEY, '1');
+    }
   } catch { /* sin almacenamiento */ }
 }
 
@@ -91,6 +113,7 @@ export function createCloud({ createClient, timers = globalThis } = {}) {
   const queue = new Map(); // `${tabla}:${id}` -> { table, op, row | id }
   let flushing = false;
   let running = null; // promesa del envío en curso
+  let liveDown = false; // la conexión en vivo (Realtime) está caída
   let retryTimer = null;
   let retryDelay = 2000;
   let onRemote = () => {};
@@ -174,7 +197,8 @@ export function createCloud({ createClient, timers = globalThis } = {}) {
         }
       }
       retryDelay = 2000;
-      setStatus('ok');
+      if (liveDown) setStatus('error', 'Se cortó la actualización en vivo; se reconecta sola.');
+      else setStatus('ok');
     } finally {
       flushing = false;
     }
@@ -195,7 +219,7 @@ export function createCloud({ createClient, timers = globalThis } = {}) {
     detail: () => detail,
     pending: () => queue.size,
     onStatus(fn) { statusListeners.add(fn); return () => statusListeners.delete(fn); },
-    host: () => { try { return new URL(loadConfig()?.url).host; } catch { return ''; } },
+    host: () => { try { return new URL(effectiveConfig()?.url).host; } catch { return ''; } },
 
     // Conecta y trae todos los datos. No toca el estado de la app: eso lo decide quien llama.
     async connect(cfg, handlers = {}) {
@@ -226,10 +250,18 @@ export function createCloud({ createClient, timers = globalThis } = {}) {
           else if (payload.new?.id) onRemote(t, { ...(payload.new.data || {}), id: payload.new.id }, payload.new.id);
         });
       }
+      // Supabase reintenta solo la conexión en vivo. Si se corta se avisa, y cuando vuelve
+      // (SUBSCRIBED) el indicador regresa a verde, en vez de quedar en rojo para siempre.
       channel.subscribe((s) => {
-        if (s === 'CHANNEL_ERROR' || s === 'TIMED_OUT') setStatus('error', 'Se cortó la actualización en vivo.');
+        if (s === 'SUBSCRIBED') {
+          liveDown = false;
+          if (status === 'error' && !queue.size) setStatus('ok');
+        } else if (s === 'CHANNEL_ERROR' || s === 'TIMED_OUT') {
+          liveDown = true;
+          if (status !== 'saving') setStatus('error', 'Se cortó la actualización en vivo; se reconecta sola.');
+        }
       });
-      setStatus('ok');
+      if (status !== 'error') setStatus('ok');
     },
 
     // Adaptador que usa el store para mandar cambios.

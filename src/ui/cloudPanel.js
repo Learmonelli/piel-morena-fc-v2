@@ -1,6 +1,6 @@
 // Sección "Nube" de la hoja de datos e indicador de estado del encabezado.
 import { h } from '../dom.js';
-import { checkKey, checkUrl, loadConfig, normalizeUrl, cleanKey } from '../cloud.js';
+import { checkKey, checkUrl, loadConfig, normalizeUrl, cleanKey, DEFAULT_CONFIG } from '../cloud.js';
 import { toast } from './toast.js';
 import { confirmDialog } from './sheet.js';
 
@@ -47,9 +47,9 @@ export function cloudSection(session, close) {
         } }, 'Desconectar')));
   }
 
-  const prev = loadConfig();
+  const prev = loadConfig() || DEFAULT_CONFIG;
   const url = h('input', { type: 'url', inputmode: 'url', placeholder: 'https://xxxx.supabase.co', autocomplete: 'off', value: prev?.url ?? '', spellcheck: 'false' });
-  const key = h('input', { type: 'text', placeholder: 'Clave pública (anon / publishable)', autocomplete: 'off', spellcheck: 'false' });
+  const key = h('input', { type: 'text', placeholder: 'Clave pública (anon / publishable)', autocomplete: 'off', spellcheck: 'false', value: prev?.key ?? '' });
   const err = h('p', { class: 'error', role: 'alert' });
   const btn = h('button', { type: 'submit' }, 'Conectar');
 

@@ -1,6 +1,6 @@
 // Une la conexión con Supabase (cloud.js) con el estado de la app (store.js) y la interfaz.
 import { createClient } from '@supabase/supabase-js';
-import { createCloud, loadConfig, saveConfig, normalizeUrl, cleanKey } from './cloud.js';
+import { createCloud, effectiveConfig, saveConfig, normalizeUrl, cleanKey } from './cloud.js';
 import { store } from './store.js';
 import { toast } from './ui/toast.js';
 import { confirmDialog } from './ui/sheet.js';
@@ -42,8 +42,9 @@ export function makeSession({ cloud = createCloud({ createClient }), confirm = c
     cloud,
     connect,
     // Al abrir la app: si ya había una conexión guardada, se reconecta sola (la nube manda).
+    // Si no hay nada guardado, usa la nube del equipo (DEFAULT_CONFIG).
     async autoConnect() {
-      const cfg = loadConfig();
+      const cfg = effectiveConfig();
       if (!cfg) return false;
       try { return await connect(cfg, { silent: true }); } catch (e) {
         notify(`No se pudo conectar con la nube: ${e.message} Se usan los datos de este navegador.`, { ms: 8000 });

@@ -320,6 +320,63 @@ test('al abrir la app se reconecta sola si había configuración (sin preguntar)
   assert.deepEqual(store.get().players.map((x) => x.name), ['Remoto']);
 });
 
+test('sin nada configurado, la app usa la nube del equipo y se conecta sola', async () => {
+  const { effectiveConfig, DEFAULT_CONFIG } = await import('../src/cloud.js');
+  mem.delete('pm2_sbconfig_off');
+  assert.deepEqual(effectiveConfig(), DEFAULT_CONFIG);
+  assert.equal(checkKey(DEFAULT_CONFIG.key), null); // la preconfigurada es una clave pública
+  assert.equal(checkUrl(DEFAULT_CONFIG.url), null);
+  let usedUrl = '';
+  const db = fakeSupabase({ players: [player('r', 'Gonzalo')], matches: [] });
+  const cloud = createCloud({ createClient: (u) => { usedUrl = u; return db.client; }, timers: noTimers });
+  const session = makeSession({ cloud, confirm: async () => true, notify: () => {} });
+  assert.equal(await session.autoConnect(), true);
+  assert.equal(usedUrl, DEFAULT_CONFIG.url);
+  assert.deepEqual(store.get().players.map((x) => x.name), ['Gonzalo']);
+  session.disconnect();
+});
+
+test('si el usuario desconecta, no se reconecta sola; si pega otra nube, manda esa', async () => {
+  const { effectiveConfig, DEFAULT_CONFIG, saveConfig } = await import('../src/cloud.js');
+  mem.delete('pm2_sbconfig_off');
+  const db = fakeSupabase({ players: [player('r', 'Gonzalo')], matches: [] });
+  const { session } = setup(db);
+  await session.autoConnect();
+  session.disconnect();
+  assert.equal(effectiveConfig(), null);
+  assert.equal(await setup(db).session.autoConnect(), false);
+  // Pegar otra nube (por ejemplo la real) la guarda y le gana a la preconfigurada.
+  const other = { url: 'https://otra.supabase.co', key: 'sb_publishable_otra' };
+  saveConfig(other);
+  assert.deepEqual(effectiveConfig(), other);
+  saveConfig(null);
+  mem.delete('pm2_sbconfig_off');
+  assert.deepEqual(effectiveConfig(), DEFAULT_CONFIG);
+});
+
+test('si se corta la conexión en vivo y vuelve sola, el indicador regresa a verde', async () => {
+  const db = fakeSupabase({ players: [player('a', 'Ana')], matches: [] });
+  let report = () => {};
+  const client = { ...db.client, channel() { const ch = { on: () => ch, subscribe: (cb) => { report = cb; return ch; } }; return ch; } };
+  const cloud = createCloud({ createClient: () => client, timers: noTimers });
+  const session = makeSession({ cloud, confirm: async () => true, notify: () => {} });
+  await session.connect(CFG);
+  report('TIMED_OUT');
+  assert.equal(cloud.status(), 'error');
+  assert.match(cloud.detail(), /se reconecta sola/);
+  report('SUBSCRIBED');
+  assert.equal(cloud.status(), 'ok');
+  // Mientras está caída, guardar igual funciona y avisa que lo en vivo sigue caído.
+  report('CHANNEL_ERROR');
+  store.updatePlayer('a', { name: 'Ana 2' });
+  await cloud.whenIdle();
+  assert.equal(db.rows('players')[0].name, 'Ana 2');
+  assert.equal(cloud.status(), 'error');
+  report('SUBSCRIBED');
+  assert.equal(cloud.status(), 'ok');
+  session.disconnect();
+});
+
 test('si faltan las tablas, avisa que hay que correr el schema.sql', async () => {
   const db = fakeSupabase();
   const broken = { ...db.client, from: () => ({ select: () => thenable(() => ({ data: null, error: { message: 'relation "public.players" does not exist' } })) }) };
