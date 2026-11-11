@@ -230,6 +230,29 @@ test('con una red lenta de verdad (respuestas por timer), whenIdle espera sin co
   assert.equal(scoreOf(db.rows('matches').find((x) => x.id === m.id), 'A'), 1);
 });
 
+test('partidos de la app original sin "comments" (ni otros campos): se completan sin reenviarlos', async () => {
+  // Así vienen los partidos reales desde el 06/10: sin el campo comments.
+  const legacy = { id: 'old1', date: '2026-10-06', teamA: ['a'], teamB: [], events: [{ id: 'e', side: 'A', scorerId: 'a' }], assists: {}, closed: true };
+  const bare = { id: 'old2', date: '2026-10-13', closed: true }; // caso extremo: casi nada
+  const db = fakeSupabase({ players: [player('a', 'Ana')], matches: [legacy, bare] });
+  const { cloud, session } = setup(db);
+  await session.connect(CFG);
+  await cloud.whenIdle();
+  assert.deepEqual(store.match('old1').comments, []);
+  assert.deepEqual(store.match('old2').events, []);
+  assert.deepEqual(store.match('old2').teamA, []);
+  assert.deepEqual(db.log, []); // completar campos al leer no reescribe los partidos en la nube
+  assert.equal(db.rows('matches').find((x) => x.id === 'old1').comments, undefined);
+  // Un comentario en ese partido sí se guarda, con la lista ya creada.
+  assert.equal(store.addComment('old1', 'Leandro', '¡Qué partido!'), true);
+  await cloud.whenIdle();
+  assert.equal(db.rows('matches').find((x) => x.id === 'old1').comments.length, 1);
+  // Lo mismo si llega en vivo desde la app original.
+  db.remote.upsert('matches', { id: 'old3', date: '2026-10-20', teamA: [], teamB: [], events: [], closed: true });
+  assert.deepEqual(store.match('old3').comments, []);
+  session.disconnect();
+});
+
 test('cambios de otro celular llegan en vivo y no se reenvían (sin eco)', async () => {
   const db = fakeSupabase({ players: [player('a', 'Ana')], matches: [] });
   const { cloud, session } = setup(db);

@@ -482,6 +482,27 @@ test('con la nube y sin admin: un finalizado no se puede reabrir ni eliminar, y 
   }
 });
 
+test('se abre un partido de la app original que no tiene "comments" (el error de los partidos reales)', () => {
+  const fake = { upsert() {}, remove() {} };
+  const legacy = { id: 'leg1', date: '2026-10-06', mode: 'interno', teamAName: 'Equipo A', teamBName: 'Equipo B', rivalName: '',
+    teamA: [], teamB: [], events: [], assists: {}, closed: true };
+  const prev = store.get();
+  store.attachSync(fake, { players: prev.players, matches: [...prev.matches, legacy] });
+  try {
+    const errors = [];
+    const onErr = (e) => errors.push(e);
+    window.addEventListener('error', onErr);
+    renderMatch(root, 'leg1');
+    window.removeEventListener('error', onErr);
+    assert.deepEqual(errors, []);
+    assert.ok(root.querySelector('.bscore'));
+    assert.ok(root.querySelector('.comment-form'), 'se ve la sección de comentarios');
+    assert.match(root.textContent, /Comentarios \(0\)/);
+  } finally {
+    store.detachSync();
+  }
+});
+
 test('partido finalizado: sin botones de carga y con comentarios', () => {
   const closed = store.get().matches.find((m) => m.closed);
   renderMatch(root, closed.id);

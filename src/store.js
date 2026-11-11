@@ -16,10 +16,31 @@ let errorHandler = () => {};
 const uid = () => crypto.randomUUID();
 const clean = (s, n = 60) => String(s ?? '').trim().slice(0, n);
 
+// Completa lo que les falte a los datos que vienen de la app original (o de versiones viejas):
+// por ejemplo, un partido sin comentarios no trae el campo "comments". Sin esto, una pantalla que
+// hace m.comments.length se rompe. Solo agrega lo que falta; nunca cambia lo que ya está.
+const isObj = (v) => v && typeof v === 'object' && !Array.isArray(v);
+export function normalizeMatch(m) {
+  if (!m || typeof m !== 'object') return m;
+  for (const k of ['teamA', 'teamB', 'events', 'comments']) if (!Array.isArray(m[k])) m[k] = [];
+  if (!isObj(m.assists) && !Array.isArray(m.assists)) m.assists = {};
+  return m;
+}
+export function normalizePlayer(p) {
+  if (!p || typeof p !== 'object') return p;
+  if (typeof p.name !== 'string') p.name = String(p.name ?? p.nickname ?? '');
+  return p;
+}
+const normalizeData = (data) => {
+  data.players.forEach(normalizePlayer);
+  data.matches.forEach(normalizeMatch);
+  return data;
+};
+
 function load() {
   try {
     const raw = JSON.parse(localStorage.getItem(KEY));
-    if (raw && Array.isArray(raw.players) && Array.isArray(raw.matches)) return raw;
+    if (raw && Array.isArray(raw.players) && Array.isArray(raw.matches)) return normalizeData(raw);
   } catch { /* sin datos o corruptos: se parte de cero */ }
   return { players: [], matches: [] };
 }
@@ -347,7 +368,7 @@ export const store = {
   // Conecta el adaptador. `data` es lo que hay en la nube (pasa a ser la fuente de verdad).
   // Con uploadLocal: true, la nube está vacía y se suben los datos que ya tenía este navegador.
   attachSync(adapter, data, { uploadLocal = false } = {}) {
-    if (!uploadLocal) state = { players: data.players, matches: data.matches };
+    if (!uploadLocal) state = normalizeData({ players: data.players, matches: data.matches });
     synced = new Map();
     if (!uploadLocal) snapshot();
     sync = adapter;
@@ -361,6 +382,7 @@ export const store = {
   applyRemote(table, row, id) {
     const list = table === 'players' ? state.players : table === 'matches' ? state.matches : null;
     if (!list) return false;
+    if (row) (table === 'matches' ? normalizeMatch : normalizePlayer)(row);
     const rid = row?.id ?? id;
     const i = list.findIndex((x) => x.id === rid);
     const k = keyOf(table, rid);
@@ -409,7 +431,7 @@ export const store = {
     const okPlayers = data.players.every((p) => p && typeof p.id === 'string' && typeof p.name === 'string');
     const okMatches = data.matches.every((m) => m && typeof m.id === 'string' && Array.isArray(m.events || []));
     if (!okPlayers || !okMatches) return false;
-    state = { players: data.players, matches: data.matches };
+    state = normalizeData({ players: data.players, matches: data.matches });
     commit();
     return true;
   },
