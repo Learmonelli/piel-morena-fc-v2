@@ -369,10 +369,11 @@ test('número, nombre y apodo aparecen en partido, jugadores, ranking y podio', 
   renderPlayers(root);
   assert.ok(has(root), 'en Jugadores');
   renderRanking(root);
-  const chip = (name) => [...root.querySelectorAll('.chip-btn')].find((c) => c.textContent === name);
-  chip('Partidos jugados').click(); // todos jugaron: Tuti seguro aparece
-  assert.ok(has(root.querySelector('.rank-out')), 'en el ranking (podio o lista)');
-  chip('Goles').click();
+  // Tuti aparece en al menos una categoría del ranking (podio o lista).
+  const cats = [...root.querySelectorAll('.chip-btn')].map((c) => c.dataset.cat);
+  const seen = cats.some((k) => { root.querySelector(`.chip-btn[data-cat="${k}"]`).click(); return has(root.querySelector('.rank-out')); });
+  assert.ok(seen, 'en el ranking (podio o lista)');
+  root.querySelector('.chip-btn[data-cat="goles"]').click();
 });
 
 test('armar equipos: contra un rival el invitado solo puede ir a "Juega"', () => {
@@ -452,8 +453,10 @@ test('ficha, tabla y ranking incluyen los goles en contra', () => {
   renderRanking(root);
   const headers = [...root.querySelectorAll('.table thead abbr')].map((a) => a.textContent);
   assert.ok(headers.includes('EC'));
-  const options = [...root.querySelectorAll('.chip-btn')].map((o) => o.textContent);
-  assert.ok(options.some((t) => /Goles en contra/.test(t)));
+  // Goles en contra, Empates y Partidos jugados van solo en la tabla, sin botón propio.
+  const options = [...root.querySelectorAll('.chip-btn')].map((o) => o.dataset.cat);
+  for (const k of ['golesContra', 'e', 'pj']) assert.ok(!options.includes(k), `sin botón: ${k}`);
+  for (const ab of ['PJ', 'E']) assert.ok(headers.includes(ab), `en la tabla: ${ab}`);
 });
 
 test('con la nube y sin admin: un finalizado no se puede reabrir ni eliminar, y lo explica', () => {
@@ -465,7 +468,7 @@ test('con la nube y sin admin: un finalizado no se puede reabrir ni eliminar, y 
     const texts = [...root.querySelectorAll('button')].map((b) => b.textContent);
     assert.ok(!texts.some((t) => /Reabrir/.test(t)));
     assert.ok(!texts.some((t) => t === 'Eliminar'));
-    assert.match(root.textContent, /solo el administrador puede editarlo o reabrirlo/);
+    assert.doesNotMatch(root.textContent, /bloqueados/); // sin aviso debajo del resultado
     assert.equal(root.querySelectorAll('.act').length, 0);
     // Como admin: se edita sin reabrir, y aparecen Reabrir y Eliminar.
     store.setAdmin(true);
@@ -505,7 +508,7 @@ test('partido finalizado: sin botones de carga y con comentarios', () => {
   const closed = store.get().matches.find((m) => m.closed);
   renderMatch(root, closed.id);
   assert.equal(root.querySelectorAll('.act').length, 0);
-  assert.match(text(), /bloqueados/);
+  assert.doesNotMatch(text(), /bloqueados/); // sin aviso debajo del resultado
   assert.ok(root.querySelector('.comment-form'));
 });
 
@@ -662,8 +665,7 @@ test('ranking: el podio de la pantalla usa el componente nuevo y la lista usa n�
   root.querySelector('.chip-btn[data-cat="goles"]').click();
   // Orden de los botones: lo más importante primero, goles en contra al final.
   const order = [...root.querySelectorAll('.chip-btn')].map((c) => c.dataset.cat);
-  assert.deepEqual(order.slice(0, 6), ['goles', 'asist', 'v', 'd', 'e', 'mvp']);
-  assert.equal(order[order.length - 1], 'golesContra');
+  assert.deepEqual(order.slice(0, 5), ['goles', 'asist', 'v', 'd', 'mvp']);
 });
 
 test('jugadores: el plantel por un lado y los invitados aparte, como el original', () => {
@@ -808,4 +810,23 @@ test('el buscador coincide con la lógica de dominio para cada jugador', () => {
     type(root.querySelector('.search input'), q);
     assert.equal(root.querySelectorAll('.pcard').length, s.players.filter((p) => playerMatches(p, q)).length, q);
   }
+});
+
+test('ranking: porcentaje de victorias y derrotas en el ranking y en la tabla', () => {
+  renderRanking(root);
+  root.querySelector('.chip-btn[data-cat="v"]').click();
+  const pods = [...root.querySelectorAll('.podium .pod-avg')].map((e) => e.textContent);
+  assert.ok(pods.length && pods.every((t) => /^\(\d{1,3}%\)$/.test(t)), `podio V: ${pods}`);
+  root.querySelector('.chip-btn[data-cat="d"]').click();
+  assert.ok([...root.querySelectorAll('.podium .pod-avg')].every((t) => /%\)$/.test(t.textContent)));
+  const headers = [...root.querySelectorAll('.table thead abbr')].map((a) => a.textContent);
+  assert.ok(headers.includes('%V') && headers.includes('%D'));
+  // Cada celda de %V cuadra con V / PJ.
+  const idx = (ab) => headers.indexOf(ab) + 1; // +1: la primera columna es el jugador
+  for (const tr of root.querySelectorAll('.table tbody tr')) {
+    const cells = [...tr.children].map((c) => c.textContent);
+    const pj = Number(cells[idx('PJ')]); const v = Number(cells[idx('V')]);
+    assert.equal(cells[idx('%V')], pj ? `${Math.round((v / pj) * 100)}%` : '—');
+  }
+  root.querySelector('.chip-btn[data-cat="goles"]').click();
 });

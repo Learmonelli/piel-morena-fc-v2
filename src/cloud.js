@@ -244,7 +244,8 @@ export function createCloud({ createClient, timers = globalThis } = {}) {
         // La sesión del admin se guarda en este navegador. detectSessionInUrl completa el regreso
         // desde GitHub (el ?code=... que agrega Supabase al volver).
         client = createClient(normalizeUrl(cfg.url), cleanKey(cfg.key), {
-          auth: { persistSession: true, storageKey: 'pm2-auth', detectSessionInUrl: true, flowType: 'pkce' },
+          // implicit: el link del mail funciona aunque se abra en otro navegador que el que lo pidió.
+          auth: { persistSession: true, autoRefreshToken: true, storageKey: 'pm2-auth', detectSessionInUrl: true, flowType: 'implicit' },
         });
         if (client.auth) {
           const { data: s } = await client.auth.getSession();
@@ -330,6 +331,33 @@ export function createCloud({ createClient, timers = globalThis } = {}) {
       const emailRedirectTo = typeof location !== 'undefined' ? location.origin + location.pathname : undefined;
       const { error } = await client.auth.signInWithOtp({ email: addr, options: { emailRedirectTo } });
       if (error) throw new Error(error.message);
+    },
+    // Email + contraseña: entra desde cualquier navegador y la sesión queda guardada en ese.
+    async signInWithPassword(email, password) {
+      if (!client?.auth) throw new Error('Primero conectá la nube.');
+      const addr = String(email || '').trim();
+      if (!addr) throw new Error('Escribí tu email.');
+      if (!password) throw new Error('Escribí tu contraseña.');
+      const { data, error } = await client.auth.signInWithPassword({ email: addr, password });
+      if (error) {
+        throw new Error(/invalid login credentials/i.test(error.message)
+          ? 'Email o contraseña incorrectos. Si todavía no creaste la contraseña, entrá con el link del mail.'
+          : error.message);
+      }
+      user = data?.session?.user ?? data?.user ?? user;
+      authListeners.forEach((fn) => fn(user));
+    },
+    // Ya adentro, el admin elige una contraseña para entrar desde otros dispositivos.
+    async setPassword(password) {
+      if (!client?.auth) throw new Error('Primero conectá la nube.');
+      if (!user) throw new Error('Primero entrá como administrador.');
+      if (String(password || '').length < 8) throw new Error('La contraseña tiene que tener al menos 8 caracteres.');
+      const { error } = await client.auth.updateUser({ password });
+      if (error) {
+        throw new Error(/reauthenticat|nonce/i.test(error.message)
+          ? 'Supabase pide volver a entrar antes de cambiar la contraseña: salí, entrá con el link del mail y probá de nuevo.'
+          : error.message);
+      }
     },
     async signOut() {
       if (client?.auth) await client.auth.signOut();

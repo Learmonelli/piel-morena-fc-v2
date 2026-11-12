@@ -114,10 +114,7 @@ export function renderMatch(root, id) {
     h('p', { class: 'muted center' },
       `${fmtDate(m.date)} · ${rivalMode ? 'Contra rival' : 'Interno'} · ${m.closed ? '🔒 Finalizado' : '● Abierto'}`),
     adminEdit ? h('p', { class: 'admin-note center' }, '👑 Finalizado, pero lo podés editar porque sos el administrador.') : null,
-    locked ? h('p', { class: 'muted center' },
-      store.canAdmin()
-        ? 'Los datos están bloqueados. Podés seguir agregando comentarios.'
-        : 'Los datos están bloqueados: solo el administrador puede editarlo o reabrirlo (💾 → Entrar con GitHub). Podés seguir agregando comentarios.')
+    locked ? null
       : h('div', { class: 'row center wrap' },
         rivalMode ? h('button', { class: 'rival-goal', onclick: rivalGoal }, `⚽ Gol de ${m.rivalName}`) : null,
         m.events.length ? h('button', { class: 'ghost', onclick: undoLast }, '↩ Deshacer último') : null));

@@ -508,3 +508,32 @@ test('los partidos viejos que siguen abiertos se cierran al conectar (como el or
   assert.equal(store.match('old').closed, true);
   assert.equal(db.rows('matches')[0].closed, true);
 });
+
+
+test('admin: email y contraseña, y la contraseña se crea ya adentro', async () => {
+  const db = fakeSupabase();
+  const calls = [];
+  const admin = { id: 'u1', email: 'leandroarmonelli@gmail.com', app_metadata: {} };
+  db.client.auth = {
+    getSession: async () => ({ data: { session: null } }),
+    onAuthStateChange: () => ({ data: { subscription: { unsubscribe() {} } } }),
+    signInWithPassword: async ({ email, password }) => {
+      calls.push(['login', email]);
+      return password === 'secreta123' ? { data: { session: { user: admin } }, error: null }
+        : { data: {}, error: { message: 'Invalid login credentials' } };
+    },
+    updateUser: async ({ password }) => { calls.push(['pass', password.length]); return { error: null }; },
+  };
+  const cloud = createCloud({ createClient: () => db.client, timers: noTimers });
+  await cloud.connect(CFG);
+  await assert.rejects(cloud.setPassword('secreta123'), /Primero entrá/);
+  await assert.rejects(cloud.signInWithPassword('leandroarmonelli@gmail.com', 'mal'), /incorrectos/);
+  let seen = null;
+  cloud.onAuth((u) => { seen = u; });
+  await cloud.signInWithPassword(' leandroarmonelli@gmail.com ', 'secreta123');
+  assert.equal(cloud.user().email, 'leandroarmonelli@gmail.com');
+  assert.equal(seen?.id, 'u1');
+  await assert.rejects(cloud.setPassword('corta'), /al menos 8/);
+  await cloud.setPassword('otraSecreta1');
+  assert.deepEqual(calls, [['login', 'leandroarmonelli@gmail.com'], ['login', 'leandroarmonelli@gmail.com'], ['pass', 12]]);
+});
