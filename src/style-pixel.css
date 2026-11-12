@@ -157,7 +157,8 @@
   [data-theme="pixel"] .table { font-size: 15px; }
   [data-theme="pixel"] .table thead th { font-size: 13px; }
   .table th, .table td { padding: 4px 5px; }
-  .table th[scope="row"] { max-width: 104px; overflow: hidden; text-overflow: ellipsis; }
-  .table th[scope="row"] .linklike.inline { min-height: 32px; padding: 0 2px; gap: 4px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+  /* Los nombres completos bajan de renglón en vez de cortarse */
+  .table th[scope="row"] { width: 96px; min-width: 96px; max-width: 96px; white-space: normal; overflow-wrap: anywhere; line-height: 1.1; }
+  .table th[scope="row"] .linklike.inline { display: block; min-height: 32px; padding: 2px; text-align: left; white-space: normal; overflow-wrap: anywhere; line-height: 1.1; }
   .table th[scope="row"] .pill { display: none; }
 }
