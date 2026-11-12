@@ -139,3 +139,25 @@
 [data-theme="pixel"] .tags .tag { font-family: var(--font-body); font-size: 16px; padding: 2px 8px; border: 2px solid #000; border-radius: 0; letter-spacing: 0; }
 [data-theme="pixel"] .mc-top > .muted { font-size: 16px; }
 [data-theme="pixel"] .pod-avg { font-family: var(--font-body); font-size: 17px; }
+
+/* Celular: podio más chico y tabla completa compacta (nombres cerca de los datos) */
+@media (max-width: 719px) {
+  .podium { gap: 4px; margin-top: 30px; }
+  .step.place-center { min-height: 190px; }
+  .step.place-side { min-height: 160px; }
+  .pod-avatar { width: 64px; height: 64px; margin-top: 8px; }
+  .step.place-center .pod-avatar { width: 80px; height: 80px; margin-top: 10px; }
+  .pod-avatar .pixel-avatar { width: 40px !important; height: 40px !important; }
+  .step.place-center .pod-avatar .pixel-avatar { width: 52px !important; height: 52px !important; }
+  [data-theme="pixel"] .step strong { font-size: 17px; }
+  [data-theme="pixel"] .step .val { font-size: 26px; }
+  [data-theme="pixel"] .step.place-center .val { font-size: 32px; }
+  [data-theme="pixel"] .pod-num b { font-size: 13px; }
+
+  [data-theme="pixel"] .table { font-size: 15px; }
+  [data-theme="pixel"] .table thead th { font-size: 13px; }
+  .table th, .table td { padding: 4px 5px; }
+  .table th[scope="row"] { max-width: 104px; overflow: hidden; text-overflow: ellipsis; }
+  .table th[scope="row"] .linklike.inline { min-height: 32px; padding: 0 2px; gap: 4px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+  .table th[scope="row"] .pill { display: none; }
+}
