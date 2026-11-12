@@ -69,14 +69,10 @@ export function renderRanking(root) {
 
   root.replaceChildren(
     h('h1', { class: 'page-title' }, 'Ranking'),
-    // En celular: un desplegable con todas las categorías (se ve entero, sin arrastrar).
-    h('label', { class: 'cat-select' }, h('span', { class: 'sr-only' }, 'Categoría del ranking'),
-      h('select', { 'aria-label': 'Categoría del ranking', onchange: (e) => { ui.cat = e.target.value; renderRanking(root); } },
-        Object.entries(RANK_CATS).map(([k, [label]]) => h('option', { value: k, selected: k === ui.cat }, label)))),
-    // En pantallas anchas: botones (entran todos).
+    // Botones siempre visibles: bajan de renglón, sin desplegable ni scroll lateral.
     h('div', { class: 'chips', role: 'group', 'aria-label': 'Categoría' },
       Object.entries(RANK_CATS).map(([k, [label]]) => h('button', {
-        class: `chip-btn ${k === ui.cat ? 'on' : ''}`, 'aria-pressed': String(k === ui.cat),
+        class: `chip-btn ${k === ui.cat ? 'on' : ''}`, 'data-cat': k, 'aria-pressed': String(k === ui.cat),
         onclick: () => { ui.cat = k; renderRanking(root); },
       }, label))),
     searchBox({ value: ui.q, placeholder: 'Buscar jugador en el ranking', label: 'Buscar en el ranking', onInput: (v) => { ui.q = v; paint(); } }),

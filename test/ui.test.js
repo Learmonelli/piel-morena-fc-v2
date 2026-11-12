@@ -213,8 +213,8 @@ test('estadísticas: gráfico de líneas de escabio con total y promedio', () =>
   assert.match(svg.getAttribute('aria-label'), /Promedio: \d+,\d por partido/);
   const stats = [...root.querySelectorAll('.esc-stats .stat span')].map((e) => e.textContent);
   assert.deepEqual(stats, ['Total', 'Promedio por partido', 'Último partido']);
-  // Ya no hay categoría "Escabio" en el selector de ranking.
-  const options = [...root.querySelectorAll('.cat-select option')].map((o) => o.textContent);
+  // Ya no hay categoría "Escabio" en los botones del ranking.
+  const options = [...root.querySelectorAll('.chip-btn')].map((o) => o.textContent);
   assert.equal(options.some((t) => /escabio/i.test(t)), false);
 });
 
@@ -369,12 +369,10 @@ test('número, nombre y apodo aparecen en partido, jugadores, ranking y podio', 
   renderPlayers(root);
   assert.ok(has(root), 'en Jugadores');
   renderRanking(root);
-  const sel = root.querySelector('.cat-select select');
-  sel.value = 'pj'; // todos jugaron: Tuti seguro aparece
-  sel.dispatchEvent(new window.Event('change', { bubbles: true }));
+  const chip = (name) => [...root.querySelectorAll('.chip-btn')].find((c) => c.textContent === name);
+  chip('Partidos jugados').click(); // todos jugaron: Tuti seguro aparece
   assert.ok(has(root.querySelector('.rank-out')), 'en el ranking (podio o lista)');
-  sel.value = 'goles';
-  sel.dispatchEvent(new window.Event('change', { bubbles: true }));
+  chip('Goles').click();
 });
 
 test('armar equipos: contra un rival el invitado solo puede ir a "Juega"', () => {
@@ -454,7 +452,7 @@ test('ficha, tabla y ranking incluyen los goles en contra', () => {
   renderRanking(root);
   const headers = [...root.querySelectorAll('.table thead abbr')].map((a) => a.textContent);
   assert.ok(headers.includes('EC'));
-  const options = [...root.querySelectorAll('.cat-select option')].map((o) => o.textContent);
+  const options = [...root.querySelectorAll('.chip-btn')].map((o) => o.textContent);
   assert.ok(options.some((t) => /Goles en contra/.test(t)));
 });
 
@@ -514,16 +512,12 @@ test('partido finalizado: sin botones de carga y con comentarios', () => {
 test('ranking: podio, categorías y buscador', () => {
   renderRanking(root);
   assert.ok(root.querySelectorAll('.podium .step').length >= 1);
-  // Celular: desplegable con todas las categorías (sin scroll horizontal).
-  const sel = root.querySelector('.cat-select select');
-  assert.ok(sel && sel.options.length >= 10);
-  // Escritorio: los mismos valores como botones.
+  // Las categorías son botones siempre visibles (sin desplegable).
+  assert.equal(root.querySelector('.cat-select'), null);
   const chips = [...root.querySelectorAll('.chip-btn')];
-  assert.equal(chips.length, sel.options.length);
+  assert.ok(chips.length >= 10);
   assert.equal(chips.filter((c) => c.getAttribute('aria-pressed') === 'true').length, 1);
-  sel.value = 'asist';
-  sel.dispatchEvent(new window.Event('change', { bubbles: true }));
-  assert.equal(root.querySelector('.cat-select select').value, 'asist');
+  chips.find((c) => c.textContent === 'Asistencias').click();
   assert.equal([...root.querySelectorAll('.chip-btn')].find((c) => c.getAttribute('aria-pressed') === 'true').textContent, 'Asistencias');
   type(root.querySelector('.search input'), 'zzzz');
   assert.match(text(), /no está en este ranking/);
@@ -579,8 +573,7 @@ test('podio: dos empatados en el 1.º tienen el mismo tamaño (tu captura de Pab
 
 test('podio: muestra el promedio por partido, igual que la lista', () => {
   renderRanking(root);
-  const sel = root.querySelector('.cat-select select');
-  const pick = (v) => { sel.value = v; sel.dispatchEvent(new window.Event('change', { bubbles: true })); };
+  const pick = (v) => root.querySelector(`.chip-btn[data-cat="${v}"]`).click();
   const avgs = () => [...root.querySelectorAll('.podium .pod-avg')].map((e) => e.textContent);
   for (const cat of ['goles', 'asist', 'ga']) {
     pick(cat);
@@ -657,20 +650,20 @@ test('podio: el laurel es simétrico, abierto arriba y las hojas quedan dentro d
 
 test('ranking: el podio de la pantalla usa el componente nuevo y la lista usa números', () => {
   renderRanking(root);
-  const sel = root.querySelector('.cat-select select');
-  sel.value = 'goles';
-  sel.dispatchEvent(new window.Event('change', { bubbles: true }));
+  root.querySelector('.chip-btn[data-cat="goles"]').click();
   assert.ok(root.querySelector('.podium .wreath'));
   assert.equal(root.querySelector('.podium .arch'), null);
   assert.ok(root.querySelector('.podium .place-center'));
   const nums = [...root.querySelectorAll('.rank-list .rpos')].map((e) => e.textContent);
   assert.ok(nums.every((t) => /^\d+°$/.test(t)), `posiciones con número: ${nums}`); // sin medallas mezcladas
   // Cambia el arco según la categoría elegida.
-  sel.value = 'mvp';
-  sel.dispatchEvent(new window.Event('change', { bubbles: true }));
+  root.querySelector('.chip-btn[data-cat="mvp"]').click();
   assert.ok([...root.querySelectorAll('.podium .emblem')].every((t) => t.textContent === '👑'));
-  sel.value = 'goles';
-  sel.dispatchEvent(new window.Event('change', { bubbles: true }));
+  root.querySelector('.chip-btn[data-cat="goles"]').click();
+  // Orden de los botones: lo más importante primero, goles en contra al final.
+  const order = [...root.querySelectorAll('.chip-btn')].map((c) => c.dataset.cat);
+  assert.deepEqual(order.slice(0, 6), ['goles', 'asist', 'v', 'd', 'e', 'mvp']);
+  assert.equal(order[order.length - 1], 'golesContra');
 });
 
 test('jugadores: el plantel por un lado y los invitados aparte, como el original', () => {

@@ -170,14 +170,9 @@ fieldset.seg legend { color: var(--muted); font-size: .85rem; padding: 0; margin
 .comment-form { display: grid; gap: 8px; }
 
 /* Ranking */
-/* Categorías del ranking: desplegable en celular, botones cuando hay lugar (>=720px) */
-.cat-select { display: block; margin-bottom: 12px; }
-.cat-select select { font-weight: 700; }
-.chips { display: none; flex-wrap: wrap; gap: 8px; padding: 2px 0 10px; margin-bottom: 4px; }
-@media (min-width: 720px) {
-  .cat-select { display: none; }
-  .chips { display: flex; }
-}
+/* Categorías del ranking: botones que bajan de renglón (sin desplegable ni scroll lateral) */
+.chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 2px 0 10px; margin-bottom: 4px; }
+@media (max-width: 719px) { .chips .chip-btn { padding: 4px 10px; min-height: 38px; font-size: .9rem; } }
 .chip-btn { flex: none; min-height: 40px; padding: 4px 14px; background: var(--solid); color: var(--text); border: 1px solid var(--line); font-weight: 600; }
 .chip-btn.on { background: var(--gold); color: var(--gold-ink); border-color: var(--gold); }
 .help { font-size: .9rem; }
