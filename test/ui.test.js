@@ -804,3 +804,10 @@ test('ranking: porcentaje de victorias y derrotas en el ranking y en la tabla', 
   }
   root.querySelector('.chip-btn[data-cat="goles"]').click();
 });
+
+test('tabla completa: goles en contra (EC) es la última columna', () => {
+  renderRanking(root);
+  const headers = [...root.querySelectorAll('.table thead abbr')].map((a) => a.textContent);
+  assert.equal(headers.at(-1), 'EC');
+  assert.deepEqual(headers.slice(0, 3), ['PJ', 'G', 'A']);
+});
