@@ -140,19 +140,31 @@
 [data-theme="pixel"] .mc-top > .muted { font-size: 16px; }
 [data-theme="pixel"] .pod-avg { font-family: var(--font-body); font-size: 17px; }
 
-/* Celular: podio más chico y tabla completa compacta (nombres cerca de los datos) */
+/* Podio compacto en todos los anchos, como el ranking de la app original: tarjetas chicas,
+   avatar chico y el puesto como una etiqueta, en vez de bloques altos. */
+.podium { gap: 8px; margin: 26px 0 12px; max-width: 520px; margin-inline: auto; }
+.step { max-width: 160px; padding: 4px 4px 0; }
+.step.place-center, .step.place-side { min-height: 0; }
+.step.place-side { margin-top: 14px; }                 /* el 1.º apenas más alto */
+.emblem { top: -14px; min-width: 28px; height: 28px; font-size: .95rem; padding: 0 6px; }
+.step.place-center .emblem { top: -16px; min-width: 32px; height: 32px; font-size: 1.05rem; }
+.pod-avatar, .step.place-center .pod-avatar { width: 64px; height: 64px; margin: 12px auto 0; }
+.pod-avatar .pixel-avatar, .step.place-center .pod-avatar .pixel-avatar { width: 40px !important; height: 40px !important; }
+.step .val, .step.place-center .val { font-size: 1.3rem; }
+.step strong, .step.place-center strong { font-size: .9rem; }
+.pod-num, .step.place-center .pod-num { padding: 2px 0 3px; }
+.pod-num b, .step.place-center .pod-num b { font-size: 1rem; }
+.pod-num small { font-size: .6rem; }
+[data-theme="pixel"] .step strong, [data-theme="pixel"] .step.place-center strong { font-size: 17px; }
+[data-theme="pixel"] .step .val, [data-theme="pixel"] .step.place-center .val { font-size: 26px; }
+[data-theme="pixel"] .pod-num b, [data-theme="pixel"] .step.place-center .pod-num b { font-size: 11px; }
+[data-theme="pixel"] .pod-num small { font-size: 14px; }
+[data-theme="pixel"] .pod-avg { font-size: 15px; margin: 0 0 4px; }
+[data-theme="pixel"] .emblem { border-width: 2px; }
+
+/* Celular: tabla completa compacta (nombres cerca de los datos) */
 @media (max-width: 719px) {
-  .podium { gap: 4px; margin-top: 30px; }
-  .step.place-center { min-height: 190px; }
-  .step.place-side { min-height: 160px; }
-  .pod-avatar { width: 64px; height: 64px; margin-top: 8px; }
-  .step.place-center .pod-avatar { width: 80px; height: 80px; margin-top: 10px; }
-  .pod-avatar .pixel-avatar { width: 40px !important; height: 40px !important; }
-  .step.place-center .pod-avatar .pixel-avatar { width: 52px !important; height: 52px !important; }
-  [data-theme="pixel"] .step strong { font-size: 17px; }
-  [data-theme="pixel"] .step .val { font-size: 26px; }
-  [data-theme="pixel"] .step.place-center .val { font-size: 32px; }
-  [data-theme="pixel"] .pod-num b { font-size: 13px; }
+  .podium { gap: 4px; }
 
   [data-theme="pixel"] .table { font-size: 15px; }
   [data-theme="pixel"] .table thead th { font-size: 13px; }
