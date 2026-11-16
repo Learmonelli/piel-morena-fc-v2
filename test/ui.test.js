@@ -202,18 +202,12 @@ test('escabio en un partido finalizado: controles deshabilitados', () => {
   assert.equal(root.querySelector('[aria-label="Una birra más"]').disabled, true);
 });
 
-test('estadísticas: gráfico de líneas de escabio con total y promedio', () => {
+test('ranking: sin la sección de escabio por partido', () => {
   renderRanking(root);
-  const svg = root.querySelector('svg.esc-chart');
-  assert.ok(svg, 'hay gráfico');
-  assert.ok(svg.querySelector('path[stroke="#f2b705"]'), 'tiene la línea');
-  const dots = svg.querySelectorAll('circle');
-  const dated = store.get().matches.filter((m) => m.date).length;
-  assert.equal(dots.length, dated); // un punto por partido
-  assert.match(svg.getAttribute('aria-label'), /Promedio: \d+,\d por partido/);
-  const stats = [...root.querySelectorAll('.esc-stats .stat span')].map((e) => e.textContent);
-  assert.deepEqual(stats, ['Total', 'Promedio por partido', 'Último partido']);
-  // Ya no hay categoría "Escabio" en los botones del ranking.
+  assert.equal(root.querySelector('svg.esc-chart'), null, 'ya no está el gráfico');
+  assert.equal(root.querySelector('.esc-stats'), null);
+  assert.doesNotMatch(text(), /Escabio por partido/);
+  // Tampoco hay categoría "Escabio" en los botones del ranking.
   const options = [...root.querySelectorAll('.chip-btn')].map((o) => o.textContent);
   assert.equal(options.some((t) => /escabio/i.test(t)), false);
 });

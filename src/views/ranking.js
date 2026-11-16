@@ -7,7 +7,6 @@ import { avatarEl } from '../avatar.js';
 import { TEAM } from '../team.js';
 import { searchBox } from '../ui/searchbox.js';
 import { openPlayerSheet } from './playerSheet.js';
-import { escabioChart } from '../ui/escabioChart.js';
 import { podium } from '../ui/podium.js';
 import { playerName } from '../ui/playerName.js';
 
@@ -86,8 +85,6 @@ export function renderRanking(root) {
         onclick: () => { ui.cat = k; renderRanking(root); },
       }, label))),
     searchBox({ value: ui.q, placeholder: 'Buscar jugador en el ranking', label: 'Buscar en el ranking', onInput: (v) => { ui.q = v; paint(); } }),
-    out, tableBox,
-    collapsible('rk:esc', h('h2', { class: 'fold-h2' }, '🍾 Escabio por partido'),
-      h('div', { class: 'card' }, escabioChart(s.matches)), { open: true, cls: 'sec' }));
+    out, tableBox);
   paint();
 }
