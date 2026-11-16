@@ -174,32 +174,12 @@ test('partido en vivo: el buscador filtra jugadores sin perder el campo', () => 
   assert.equal(root.querySelectorAll('.roster-box .prow').length, total);
 });
 
-test('escabio en el partido: un solo total del equipo, sin controles por jugador', () => {
+test('partido: sin la sección de escabio', () => {
   const open = store.get().matches.find((m) => !m.closed);
-  const rerender = () => renderMatch(root, open.id);
-  const unsub = store.subscribe(rerender);
-  rerender();
-  assert.equal(root.querySelectorAll('.stepper').length, 1); // antes había uno por jugador
-  const input = () => root.querySelector('.esc-total-input');
-  assert.equal(input().value, '0');
-  root.querySelector('[aria-label="Una birra más"]').click();
-  root.querySelector('[aria-label="Una birra más"]').click();
-  assert.equal(input().value, '2');
-  assert.equal(store.match(open.id).escabioTotal, 2);
-  root.querySelector('[aria-label="Una birra menos"]').click();
-  assert.equal(input().value, '1');
-  input().value = '11';
-  input().dispatchEvent(new window.Event('change', { bubbles: true }));
-  assert.equal(store.match(open.id).escabioTotal, 11);
-  assert.match(root.textContent, /Escabio \(11\)/);
-  unsub();
-});
-
-test('escabio en un partido finalizado: controles deshabilitados', () => {
-  const closed = store.get().matches.find((m) => m.closed);
-  renderMatch(root, closed.id);
-  assert.equal(root.querySelector('.esc-total-input').disabled, true);
-  assert.equal(root.querySelector('[aria-label="Una birra más"]').disabled, true);
+  renderMatch(root, open.id);
+  assert.equal(root.querySelector('.esc-total-input'), null);
+  assert.equal(root.querySelector('[aria-label="Una birra más"]'), null);
+  assert.doesNotMatch(root.textContent, /Escabio/);
 });
 
 test('ranking: sin la sección de escabio por partido', () => {

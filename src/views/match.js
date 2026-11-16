@@ -2,7 +2,7 @@ import { h, fill } from '../dom.js';
 import { store } from '../store.js';
 import { collapsible } from '../collapsible.js';
 import {
-  scoreOf, goalsBy, ownGoalsBy, assistQty, sideOf, inMatch, fmtDate, AWARDS, escTotal, displayName,
+  scoreOf, goalsBy, ownGoalsBy, assistQty, sideOf, inMatch, fmtDate, AWARDS, displayName,
 } from '../domain/domain.js';
 import { playerMatches } from '../search.js';
 import { avatarEl } from '../avatar.js';
@@ -201,20 +201,6 @@ export function renderMatch(root, id) {
     return h('label', { class: 'award-row' }, h('span', {}, `${def.icon} ${def.label}`), sel);
   });
 
-  // ---- Escabio: un total del equipo por partido (como en la app original) ----
-  const escInput = h('input', {
-    type: 'number', inputmode: 'numeric', min: 0, max: 999, value: String(escTotal(m)), disabled: locked,
-    class: 'esc-total-input', 'aria-label': 'Total de escabio del equipo',
-    onchange: (e) => store.setEscabioTotal(m.id, e.target.value),
-  });
-  const escabioBox = h('div', { class: 'card esc-total' },
-    h('p', { class: 'muted' }, 'Total de birras del equipo en este partido.'),
-    h('div', { class: 'stepper big' },
-      h('button', { class: 'ghost', 'aria-label': 'Una birra menos', disabled: locked, onclick: () => store.adjustEscabioTotal(m.id, -1) }, '−'),
-      escInput,
-      h('button', { class: 'ghost', 'aria-label': 'Una birra más', disabled: locked, onclick: () => store.adjustEscabioTotal(m.id, 1) }, '+')),
-    locked ? h('p', { class: 'muted center' }, '🔒 Partido finalizado.') : null);
-
   // ---- Goles cargados ----
   const evRows = m.events.map((ev, i) => {
     const p = byId(ev.scorerId);
@@ -343,7 +329,6 @@ export function renderMatch(root, id) {
         locked ? null : h('div', { class: 'row' },
           h('button', { class: 'ghost own-btn', onclick: openOwnGoal }, '🙈 Agregar gol en contra'))),
       { open: true, cls: 'sec' }),
-    collapsible(`esc:${m.id}`, h('h2', { class: 'fold-h2' }, `🍾 Escabio (${escTotal(m)})`), escabioBox, { cls: 'sec' }),
     collapsible(`cm:${m.id}`, h('h2', { class: 'fold-h2' }, `Comentarios (${m.comments.length})`),
       h('div', { class: 'card' }, comments), { open: true, cls: 'sec' }),
     actions);
