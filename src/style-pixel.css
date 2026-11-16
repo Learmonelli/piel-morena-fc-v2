@@ -176,3 +176,11 @@
   .table th[scope="row"] .linklike.inline { display: block; min-height: 32px; padding: 2px; text-align: left; white-space: normal; overflow-wrap: anywhere; line-height: 1.1; }
   .table th[scope="row"] .pill { display: none; }
 }
+
+/* Tabla completa: el encabezado queda fijo arriba al bajar (y los nombres fijos a la izquierda).
+   La tabla scrollea por dentro (alto máximo ~70% de la pantalla) para que el sticky funcione en
+   los dos sentidos; si no, el scroll horizontal de la tabla lo anula. */
+.table-wrap.card { max-height: 70vh; overflow: auto; overscroll-behavior: contain; }
+.table thead th { position: sticky; top: 0; z-index: 2; background: var(--card); box-shadow: 0 2px 0 var(--line); }
+.table thead th:first-child { left: 0; z-index: 3; } /* la esquina "Jugador" queda fija en los dos sentidos */
+.table th[scope="row"] { z-index: 1; }
