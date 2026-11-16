@@ -3,7 +3,7 @@ import { store } from '../store.js';
 import { collapsible } from '../collapsible.js';
 import {
   computeStats, POSITION_GROUPS, POS_NAME, playerPositions, resultFor, goalsBy, ownGoalsBy, assistQty, scoreOf, fmtDate, sideOf,
-  displayName,
+  displayName, AWARDS,
 } from '../domain/domain.js';
 import { avatarEl } from '../avatar.js';
 import { TEAM } from '../team.js';
@@ -89,20 +89,27 @@ export function openPlayerSheet(player) {
         avatarEl(player, TEAM, 120),
         h('div', {},
           h('div', { class: 'player-name' }, playerName(player)),
-          player.guest ? h('p', { class: 'muted' }, 'invitado') : null,
           positions.length ? h('div', { class: 'pos-tags' }, positions.map((c) => h('span', { class: 'pill', title: POS_NAME[c] }, c))) : null,
           h('button', { class: 'ghost small', onclick: () => { close(); openEditPlayer(player); } }, '✏️ Editar jugador'))),
       h('div', { class: 'stats-grid' },
         stat('Partidos', st.pj), stat('Goles', st.goles), stat('En contra', st.golesContra), stat('Asist.', st.asist),
         stat('Victorias', st.v), stat('Empates', st.e), stat('Derrotas', st.d),
         stat('Figuras', st.mvp), stat('Golazos', st.golazos), stat('Racha', st.rachaAct)),
+      // Resumen de premios (solo los que ganó alguna vez).
+      Object.values(AWARDS).some((d) => st[d.stat]) ? h('div', { class: 'tags awards-summary', 'aria-label': 'Premios' },
+        Object.entries(AWARDS).filter(([, d]) => st[d.stat]).map(([cat, d]) => h('span', { class: `tag aw-${cat}` }, `${d.icon} ${d.short} ×${st[d.stat]}`))) : null,
       collapsible(`ph:${player.id}`, h('strong', { class: 'fold-title' }, `Historial (${played.length})`),
         played.length ? h('ul', { class: 'history' }, played.map((m) => {
           const [t, cls, label] = RES[resultFor(m, player.id)];
+          // Premios que ganó este jugador en este partido (figura, arquero, golazo...).
+          const won = Object.entries(AWARDS).filter(([, def]) => m[def.field] === player.id);
           return h('li', {},
             h('span', { class: `res ${cls}`, 'aria-label': label }, t),
-            h('a', { href: `#/partido/${m.id}`, onclick: close }, `${fmtDate(m.date)} · ${scoreOf(m, 'A')}:${scoreOf(m, 'B')}`),
-            h('span', { class: 'muted' }, `⚽${goalsBy(m, player.id)} 🤝${assistQty(m, player.id)}${ownGoalsBy(m, player.id) ? ` 🙈${ownGoalsBy(m, player.id)}` : ''}`));
+            h('div', { class: 'hist-main' },
+              h('a', { href: `#/partido/${m.id}`, onclick: close }, `${fmtDate(m.date)} · ${scoreOf(m, 'A')}:${scoreOf(m, 'B')}`),
+              h('span', { class: 'muted' }, `⚽${goalsBy(m, player.id)} 🤝${assistQty(m, player.id)}${ownGoalsBy(m, player.id) ? ` 🙈${ownGoalsBy(m, player.id)}` : ''}`),
+              won.length ? h('span', { class: 'tags hist-awards' },
+                won.map(([cat, def]) => h('span', { class: `tag aw-${cat}` }, `${def.icon} ${def.short}`))) : null));
         })) : h('p', { class: 'muted' }, 'Todavía no jugó ningún partido.'), { open: true }),
       store.canAdmin() ? h('div', { class: 'row end' },
         h('button', { class: 'danger', onclick: async () => {

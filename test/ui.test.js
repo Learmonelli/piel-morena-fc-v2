@@ -811,3 +811,17 @@ test('tabla completa: goles en contra (EC) es la última columna', () => {
   assert.equal(headers.at(-1), 'EC');
   assert.deepEqual(headers.slice(0, 3), ['PJ', 'G', 'A']);
 });
+
+test('ficha del jugador: premios de cada partido en el historial y resumen de premios', () => {
+  const s = store.get();
+  const m = s.matches.find((x) => x.closed && x.mvpId);
+  const p = s.players.find((x) => x.id === m.mvpId);
+  openPlayerSheet(p);
+  const sh = document.querySelector('dialog.sheet[open]');
+  const row = [...sh.querySelectorAll('.history li')].find((li) => li.querySelector(`a[href="#/partido/${m.id}"]`));
+  assert.ok(row, 'el partido está en el historial');
+  assert.ok([...row.querySelectorAll('.hist-awards .tag')].some((t) => /👑 Figura/.test(t.textContent)), 'muestra que fue figura');
+  const total = s.matches.filter((x) => x.mvpId === p.id).length;
+  assert.ok([...sh.querySelectorAll('.awards-summary .tag')].some((t) => t.textContent === `👑 Figura ×${total}`));
+  sh.querySelector('[aria-label="Cerrar"]').click();
+});

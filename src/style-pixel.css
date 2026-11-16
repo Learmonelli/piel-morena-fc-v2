@@ -184,3 +184,9 @@
 .table thead th { position: sticky; top: 0; z-index: 2; background: var(--card); box-shadow: 0 2px 0 var(--line); }
 .table thead th:first-child { left: 0; z-index: 3; } /* la esquina "Jugador" queda fija en los dos sentidos */
 .table th[scope="row"] { z-index: 1; }
+
+/* Ficha del jugador: premios por partido en el historial y resumen de premios */
+.history .hist-main { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; flex: 1; min-width: 0; }
+.tags.hist-awards { justify-content: flex-start; gap: 4px; width: 100%; }
+.tags.awards-summary { justify-content: flex-start; margin: 0 0 10px; }
+[data-theme="pixel"] .hist-awards .tag { font-size: 14px; padding: 1px 6px; }
