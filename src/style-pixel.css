@@ -142,7 +142,9 @@
 
 /* Podio compacto en todos los anchos, como el ranking de la app original: tarjetas chicas,
    avatar chico y el puesto como una etiqueta, en vez de bloques altos. */
-.podium { gap: 8px; margin: 26px 0 12px; max-width: 520px; margin-inline: auto; }
+/* stretch: todas las tarjetas miden lo mismo aunque una tenga más renglones (p. ej. "invitado");
+   el 2.º y 3.º quedan un poco más bajos por su margin-top. */
+.podium { gap: 8px; margin: 26px 0 12px; max-width: 520px; margin-inline: auto; align-items: stretch; }
 .step { max-width: 160px; padding: 4px 4px 0; }
 .step.place-center, .step.place-side { min-height: 0; }
 .step.place-side { margin-top: 14px; }                 /* el 1.º apenas más alto */
