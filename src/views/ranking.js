@@ -63,7 +63,7 @@ export function renderRanking(root) {
     // Goles en contra (EC) va al final, como en los botones del ranking.
     const cols = [['PJ', 'Partidos', 'pj'], ['G', 'Goles', 'goles'], ['A', 'Asistencias', 'asist'], ['V', 'Victorias', 'v'],
       ['E', 'Empates', 'e'], ['D', 'Derrotas', 'd'], ['%V', 'Porcentaje de victorias', '%v'], ['%D', 'Porcentaje de derrotas', '%d'], ['Racha', 'Racha invicta', 'rachaAct'], ['🔥', 'Golazos', 'golazos'],
-      ['🧱', 'Muros', 'muros'], ['🪓', 'Hachazos', 'hachazos'], ['📣', 'Polémicas', 'polemicas'], ['👑', 'Figuras', 'mvp'], ['🧤', 'Arquero', 'gk'],
+      ['🧱', 'Muros', 'muros'], ['🪓', 'Hachazos', 'hachazos'], ['📣', 'Polémicas', 'polemicas'], ['👑', 'Figuras', 'mvp'], ['🧤', 'Arquero', 'gk'], ['🎯', 'Adivino', 'adivino'],
       ['EC', 'Goles en contra', 'golesContra']];
     tableBox.replaceChildren(collapsible('rk:table', h('h2', { class: 'fold-h2' }, 'Tabla completa'),
       ps.length ? h('div', { class: 'card table-wrap' }, h('table', { class: 'table' },

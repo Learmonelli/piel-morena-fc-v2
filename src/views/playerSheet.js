@@ -94,7 +94,8 @@ export function openPlayerSheet(player) {
       h('div', { class: 'stats-grid' },
         stat('Partidos', st.pj), stat('Goles', st.goles), stat('En contra', st.golesContra), stat('Asist.', st.asist),
         stat('Victorias', st.v), stat('Empates', st.e), stat('Derrotas', st.d),
-        stat('Figuras', st.mvp), stat('Golazos', st.golazos), stat('Racha', st.rachaAct)),
+        stat('Figuras', st.mvp), stat('Golazos', st.golazos), stat('Racha', st.rachaAct),
+        st.pronos ? stat('🎯 Adivino', st.adivino) : null),
       // Resumen de premios (solo los que ganó alguna vez).
       Object.values(AWARDS).some((d) => st[d.stat]) ? h('div', { class: 'tags awards-summary', 'aria-label': 'Premios' },
         Object.entries(AWARDS).filter(([, d]) => st[d.stat]).map(([cat, d]) => h('span', { class: `tag aw-${cat}` }, `${d.icon} ${d.short} ×${st[d.stat]}`))) : null,
