@@ -27,7 +27,7 @@ const { renderMatch } = await import('../src/views/match.js');
 const { renderRanking } = await import('../src/views/ranking.js');
 const { renderPlayers } = await import('../src/views/players.js');
 const { openPlayerSheet } = await import('../src/views/playerSheet.js');
-const { scoreOf, inMatch, RANK_CATS, computeStats, rankBy } = await import('../src/domain/domain.js');
+const { scoreOf, inMatch, RANK_CATS, computeStats, rankBy, sideOf } = await import('../src/domain/domain.js');
 const { playerMatches } = await import('../src/search.js');
 
 const root = document.getElementById('app');
@@ -850,5 +850,24 @@ test('armar equipos: los que juegan suben arriba, agrupados por equipo con su ca
   }
   const heads = [...root.querySelectorAll('.teams-box .side-head')].map((x) => x.textContent);
   assert.match(heads[0], new RegExp(`^${m.teamAName} \\(\\d+\\)$`));
+  unsub();
+});
+
+test('armar equipos: tocar dos veces el mismo A o B lo deselecciona', () => {
+  const m = store.get().matches.find((x) => x.mode === 'interno' && !x.closed);
+  const rerender = () => renderMatch(root, m.id);
+  const unsub = store.subscribe(rerender);
+  rerender();
+  const p = store.get().players.find((x) => !x.guest);
+  const btn = (side) => root.querySelector(`.teams-box [aria-label="${p.name} en ${side === 'A' ? m.teamAName : store.match(m.id).teamBName}"]`);
+  btn('A').click();
+  assert.equal(sideOf(store.match(m.id), p.id), 'A');
+  btn('A').click(); // de nuevo: lo saca
+  assert.equal(sideOf(store.match(m.id), p.id) || '', '');
+  btn('B').click();
+  assert.equal(sideOf(store.match(m.id), p.id), 'B');
+  btn('A').click(); // el otro lado lo cambia, no lo saca
+  assert.equal(sideOf(store.match(m.id), p.id), 'A');
+  btn('A').click();
   unsub();
 });

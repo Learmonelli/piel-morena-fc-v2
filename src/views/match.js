@@ -193,7 +193,8 @@ export function renderMatch(root, id) {
               class: `seg-btn ${val ? `side-${val}` : 'side-none'} ${cur === val ? 'on' : ''}`,
               'aria-pressed': String(cur === val), disabled: locked,
               'aria-label': val ? `${p.name} en ${val === 'A' ? m.teamAName : nameB}` : `${p.name} no juega`,
-              onclick: () => store.setTeamSide(m.id, p.id, val),
+              // Tocar de nuevo el A/B que ya está elegido lo saca del equipo (queda "sin equipo").
+              onclick: () => store.setTeamSide(m.id, p.id, val && cur === val ? '' : val),
             }, text))))];
       })) : h('p', { class: 'muted' }, 'Nadie coincide con la búsqueda.'));
   };
