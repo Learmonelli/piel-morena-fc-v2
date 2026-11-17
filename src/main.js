@@ -15,6 +15,7 @@ import { renderRanking } from './views/ranking.js';
 import { renderPlayers } from './views/players.js';
 import { makeSession } from './cloudSession.js';
 import { cloudSection, statusChip } from './ui/cloudPanel.js';
+import { installSection } from './ui/install.js';
 
 const session = makeSession();
 
@@ -66,6 +67,8 @@ function openData() {
     });
     const synced = store.isSynced();
     return h('div', {},
+      h('h3', { class: 'data-title' }, '📲 App en el celular'),
+      installSection(),
       cloudSection(session, close),
       h('h3', { class: 'data-title' }, '💾 Copias'),
       h('p', { class: 'muted' }, synced
