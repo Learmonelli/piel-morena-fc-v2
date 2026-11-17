@@ -825,3 +825,30 @@ test('ficha del jugador: premios de cada partido en el historial y resumen de pr
   assert.ok([...sh.querySelectorAll('.awards-summary .tag')].some((t) => t.textContent === `👑 Figura ×${total}`));
   sh.querySelector('[aria-label="Cerrar"]').click();
 });
+
+test('armar equipos: los que juegan suben arriba, agrupados por equipo con su cantidad', () => {
+  const m = store.get().matches.find((x) => x.mode === 'interno' && !x.closed);
+  const rerender = () => renderMatch(root, m.id);
+  const unsub = store.subscribe(rerender);
+  rerender();
+  const sides = () => [...root.querySelectorAll('.teams-box .prow')].map((r) => {
+    const on = r.querySelector('.seg-btn.on');
+    return on.classList.contains('side-A') ? 'A' : on.classList.contains('side-B') ? 'B' : '';
+  });
+  // Orden: todos los A, después los B, después los que no juegan.
+  const order = sides();
+  const rank = { A: 0, B: 1, '': 2 };
+  assert.deepEqual(order, [...order].sort((a, b) => rank[a] - rank[b]));
+  // Elegir a alguien que no juega para A lo sube al grupo de A.
+  const free = [...root.querySelectorAll('.teams-box .prow')].find((r) => r.querySelector('.seg-btn.side-none.on'));
+  if (free) {
+    const name = free.querySelector('.pname-main').textContent;
+    free.querySelector('.seg-btn.side-A').click();
+    const rows = [...root.querySelectorAll('.teams-box .prow')];
+    const idx = rows.findIndex((r) => r.querySelector('.pname-main').textContent === name);
+    assert.ok(sides().slice(0, idx + 1).every((x) => x === 'A'), 'quedó dentro del grupo de A, arriba');
+  }
+  const heads = [...root.querySelectorAll('.teams-box .side-head')].map((x) => x.textContent);
+  assert.match(heads[0], new RegExp(`^${m.teamAName} \\(\\d+\\)$`));
+  unsub();
+});

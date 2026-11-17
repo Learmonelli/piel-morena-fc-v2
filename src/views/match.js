@@ -152,6 +152,11 @@ export function renderMatch(root, id) {
     // Armar equipos: A | ninguno | B
     const choices = rivalMode ? [['A', 'Juega'], ['', 'No']] : [['A', 'A'], ['', '—'], ['B', 'B']];
     const all = s.players.filter((p) => playerMatches(p, q));
+    // Los que ya juegan suben arriba (A, después B) y el resto queda abajo; dentro de cada grupo,
+    // el orden de siempre (sort estable).
+    const rank = { A: 0, B: 1, '': 2 };
+    const sortedBySide = (list) => [...list].sort((x, y) => rank[sideOf(m, x.id) || ''] - rank[sideOf(m, y.id) || '']);
+    const groupName = (side) => (side === 'A' ? m.teamAName : side === 'B' ? nameB : rivalMode ? 'No juegan' : 'Sin equipo');
     // Invitado (como en la app original): nombre + "＋ A" / "＋ B". Queda anotado en ese equipo.
     const guestIn = h('input', {
       type: 'text', maxlength: 60, placeholder: 'Invitado (sin perfil)…', autocomplete: 'off',
@@ -174,9 +179,13 @@ export function renderMatch(root, id) {
       locked ? null : h('div', { class: 'row wrap' },
         h('button', { class: 'ghost', onclick: () => { store.shuffleTeams(m.id); toast('Equipos sorteados.'); } }, '🎲 Sortear equipos')),
       guestForm, locked ? null : guestErr,
-      all.length ? h('ul', { class: 'plist' }, all.map((p) => {
+      all.length ? h('ul', { class: 'plist' }, sortedBySide(all).flatMap((p, i, arr) => {
         const cur = sideOf(m, p.id) || '';
-        return h('li', { class: 'prow' },
+        // Título de grupo cuando cambia el lado: "Vinotinto (6)", "Blanco (6)", "Sin equipo (12)".
+        const prev = i ? sideOf(m, arr[i - 1].id) || '' : null;
+        const head = cur !== prev ? h('li', { class: 'side-head', 'data-side': cur || 'none' },
+          `${groupName(cur)} (${arr.filter((x) => (sideOf(m, x.id) || '') === cur).length})`) : null;
+        return [head, h('li', { class: 'prow' },
           avatarEl(p, TEAM, 32),
           h('div', { class: 'pinfo' }, playerName(p)),
           h('div', { class: 'seg-btns', role: 'group', 'aria-label': `Equipo de ${p.name}` },
@@ -185,7 +194,7 @@ export function renderMatch(root, id) {
               'aria-pressed': String(cur === val), disabled: locked,
               'aria-label': val ? `${p.name} en ${val === 'A' ? m.teamAName : nameB}` : `${p.name} no juega`,
               onclick: () => store.setTeamSide(m.id, p.id, val),
-            }, text))));
+            }, text))))];
       })) : h('p', { class: 'muted' }, 'Nadie coincide con la búsqueda.'));
   };
 

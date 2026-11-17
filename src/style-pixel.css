@@ -190,3 +190,10 @@
 .tags.hist-awards { justify-content: flex-start; gap: 4px; width: 100%; }
 .tags.awards-summary { justify-content: flex-start; margin: 0 0 10px; }
 [data-theme="pixel"] .hist-awards .tag { font-size: 14px; padding: 1px 6px; }
+
+/* Armar equipos: títulos de grupo (los que juegan arriba) */
+.teams-box .side-head { list-style: none; margin: 10px 0 2px; padding: 4px 8px; border-radius: 6px; font-weight: 700; font-size: .85rem; }
+.teams-box .side-head[data-side="A"] { background: color-mix(in srgb, var(--gold) 22%, transparent); color: var(--gold); }
+.teams-box .side-head[data-side="B"] { background: rgba(192, 52, 95, .3); color: #ff9ab8; }
+.teams-box .side-head[data-side="none"] { color: var(--muted); }
+[data-theme="pixel"] .teams-box .side-head { font-family: var(--font-pixel); font-size: 9px; line-height: 1.7; border-radius: 0; }
