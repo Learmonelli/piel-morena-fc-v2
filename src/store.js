@@ -1,7 +1,7 @@
 // Estado y acciones. Persiste en localStorage con el mismo modelo que la app original,
 // así la capa de datos se puede cambiar a Supabase tocando solo este archivo.
 import {
-  sideOf, inMatch, todayStr, AWARDS, POS_NAME, escTotal, realGoals, opposite,
+  sideOf, inMatch, todayStr, AWARDS, POS_NAME, escTotal, realGoals, opposite, betsOpen,
 } from './domain/domain.js';
 import { buildDemo } from './domain/demo.js';
 import { sanitizeFace, randomFace } from './pmAvatar.js';
@@ -24,6 +24,7 @@ export function normalizeMatch(m) {
   if (!m || typeof m !== 'object') return m;
   for (const k of ['teamA', 'teamB', 'events', 'comments']) if (!Array.isArray(m[k])) m[k] = [];
   if (!isObj(m.assists) && !Array.isArray(m.assists)) m.assists = {};
+  if (!isObj(m.bets)) m.bets = {};
   return m;
 }
 export function normalizePlayer(p) {
@@ -323,6 +324,34 @@ export const store = {
     const m = match(matchId);
     if (!editable(m)) return false;
     return store.setEscabioTotal(matchId, escTotal(m) + delta);
+  },
+  // Pronóstico: lo hace un jugador del plantel (no invitado), una sola vez, antes del primer gol.
+  placeBet(matchId, playerId, { winner, a, b } = {}) {
+    const m = match(matchId);
+    const p = state.players.find((x) => x.id === playerId);
+    if (!m || !p || p.guest || !betsOpen(m)) return false;
+    if (!['A', 'B', 'E'].includes(winner)) return false;
+    if (!isObj(m.bets)) m.bets = {};
+    if (m.bets[playerId]) return false;
+    const bet = { winner, ts: Date.now() };
+    const sa = a === '' || a == null ? null : Math.trunc(Number(a));
+    const sb = b === '' || b == null ? null : Math.trunc(Number(b));
+    if (sa != null && sb != null && sa >= 0 && sb >= 0 && sa <= 99 && sb <= 99) {
+      // El marcador tiene que coincidir con el ganador elegido.
+      const w = sa > sb ? 'A' : sa < sb ? 'B' : 'E';
+      if (w !== winner) return false;
+      bet.a = sa; bet.b = sb;
+    }
+    m.bets[playerId] = bet;
+    commit();
+    return true;
+  },
+  removeBet(matchId, playerId) {
+    const m = match(matchId);
+    if (!admin || !m || !m.bets || !m.bets[playerId]) return false;
+    delete m.bets[playerId];
+    commit();
+    return true;
   },
   // Los comentarios se pueden agregar aunque el partido esté finalizado.
   addComment(matchId, author, text) {

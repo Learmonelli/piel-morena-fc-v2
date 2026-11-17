@@ -11,7 +11,7 @@ import { playerName } from './playerName.js';
 // Ícono del emblema según la categoría.
 export const AWARD_ICONS = {
   goles: '⚽', asist: '🤝', ga: '⚽🤝', mvp: '👑', gk: '🧤', pj: '👟', v: '🏆', d: '🌩️', e: '⚖️',
-  invicto: '🛡️', racha: '🔥', golazos: '🔥', muros: '🧱', hachazos: '🪓', polemicas: '📣', golesContra: '🙈',
+  invicto: '🛡️', racha: '🔥', golazos: '🔥', muros: '🧱', hachazos: '🪓', polemicas: '📣', golesContra: '🙈', adivino: '🎯',
 };
 
 const NS = 'http://www.w3.org/2000/svg';

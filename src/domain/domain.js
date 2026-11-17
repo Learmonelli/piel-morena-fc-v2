@@ -72,12 +72,26 @@ export const AWARDS = {
   polemica: { field: 'polemicaId', label: 'Polémica', short: 'Polémica', icon: '📣', stat: 'polemicas' },
 };
 
+// ---- Pronósticos ("🎯 El Adivino") ----
+// m.bets = { [playerId]: { winner: 'A' | 'B' | 'E', a?: n, b?: n, ts } }. Pronostica cualquiera de la
+// lista de jugadores, uno por partido. Se cierra con el primer gol cargado (o al finalizar).
+export const BET_POINTS = { winner: 1, exact: 3 };
+export const betsOpen = (m) => !!m && !m.closed && !(m.events || []).length;
+export const winnerOf = (m) => { const a = scoreOf(m, 'A'); const b = scoreOf(m, 'B'); return a > b ? 'A' : b > a ? 'B' : 'E'; };
+const hasScore = (bet) => Number.isInteger(bet?.a) && Number.isInteger(bet?.b);
+// 3 puntos el resultado exacto; si no, 1 por acertar quién gana (o el empate); si no, 0.
+export function betPoints(m, bet) {
+  if (!bet) return 0;
+  if (hasScore(bet) && bet.a === scoreOf(m, 'A') && bet.b === scoreOf(m, 'B')) return BET_POINTS.exact;
+  return bet.winner === winnerOf(m) ? BET_POINTS.winner : 0;
+}
+
 export function computeStats(players, matches) {
   const st = {};
   players.forEach((p) => {
     st[p.id] = {
       pj: 0, goles: 0, golesContra: 0, asist: 0, mvp: 0, gk: 0, v: 0, d: 0, e: 0, escabio: 0,
-      hachazos: 0, polemicas: 0, golazos: 0, muros: 0, racha: 0, rachaAct: 0,
+      hachazos: 0, polemicas: 0, golazos: 0, muros: 0, racha: 0, rachaAct: 0, adivino: 0, pronos: 0,
     };
   });
   matches.forEach((m) => {
@@ -96,6 +110,14 @@ export function computeStats(players, matches) {
     Object.keys(as).forEach((id) => { if (st[id]) st[id].asist += Number(as[id]) || 0; });
     Object.values(AWARDS).forEach(({ field, stat }) => { const id = m[field]; if (id && st[id]) st[id][stat]++; });
     players.forEach((p) => { st[p.id].escabio += qtyOf(m.escabio, p.id); });
+    // Pronósticos: puntos solo cuando el partido está finalizado.
+    if (m.closed) {
+      Object.entries(m.bets || {}).forEach(([id, bet]) => {
+        if (!st[id]) return;
+        st[id].pronos++;
+        st[id].adivino += betPoints(m, bet);
+      });
+    }
   });
   // Racha invicta (actual y mejor histórica): partidos seguidos sin perder.
   players.forEach((p) => {
@@ -129,10 +151,12 @@ export const RANK_CATS = {
   muros: ['🧱 Muro', (s) => s.muros],
   hachazos: ['🪓 Hachazos', (s) => s.hachazos],
   polemicas: ['📣 Polémica', (s) => s.polemicas],
+  adivino: ['🎯 El Adivino', (s) => s.adivino],
   golesContra: ['🙈 Goles en contra', (s) => s.golesContra],
 };
 
 export const RANK_HELP = {
+  adivino: 'El Adivino: puntos por pronósticos (3 el resultado exacto, 1 quién gana).',
   mvp: 'Figura: el mejor jugador del partido.',
   gk: 'Mejor arquero: el arquero más destacado del partido.',
   golazos: 'Golazo Piel Morena: el mejor gol del partido (premio estilo Puskas).',

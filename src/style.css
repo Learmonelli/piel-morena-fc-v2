@@ -168,6 +168,15 @@ fieldset.seg legend { color: var(--muted); font-size: .85rem; padding: 0; margin
 .comments { list-style: none; padding: 0; margin: 0 0 10px; }
 .comments li { padding: 8px 0; border-bottom: 1px solid var(--line); }
 .comment-form { display: grid; gap: 8px; }
+.bets { display: grid; gap: 10px; }
+.bet-pick select { width: 100%; }
+.bet-win { display: flex; }
+.bet-win .seg-btn { flex: 1; }
+.bet-score { align-items: center; gap: 8px; }
+.bet-score input { width: 80px; }
+.bet-list { list-style: none; padding: 0; margin: 0; }
+.bet-list li { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 6px 0; border-bottom: 1px solid var(--line); }
+.bet-list .bet-pts { margin-left: auto; }
 
 /* Ranking */
 /* Categorías del ranking: botones que bajan de renglón (sin desplegable ni scroll lateral) */

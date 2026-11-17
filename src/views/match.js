@@ -2,7 +2,7 @@ import { h, fill } from '../dom.js';
 import { store } from '../store.js';
 import { collapsible } from '../collapsible.js';
 import {
-  scoreOf, goalsBy, ownGoalsBy, assistQty, sideOf, inMatch, fmtDate, AWARDS, displayName,
+  scoreOf, goalsBy, ownGoalsBy, assistQty, sideOf, inMatch, fmtDate, AWARDS, displayName, betsOpen, betPoints,
 } from '../domain/domain.js';
 import { playerMatches } from '../search.js';
 import { avatarEl } from '../avatar.js';
@@ -14,7 +14,7 @@ import { confirmDialog, openSheet } from '../ui/sheet.js';
 import { sfx, buzz } from '../ui/sfx.js';
 import { shareSummary } from '../ui/share.js';
 
-const ui = { q: '', drafts: {} };
+const ui = { q: '', drafts: {}, bet: {} };
 const getAuthor = () => { try { return localStorage.getItem('pm2_author') || ''; } catch { return ''; } };
 const setAuthor = (a) => { try { localStorage.setItem('pm2_author', a); } catch { /* ignorar */ } };
 
@@ -296,6 +296,54 @@ export function renderMatch(root, id) {
       toast('Comentario enviado.');
     } }, authorIn, textIn, h('button', { type: 'submit' }, 'Comentar')));
 
+  // ---- Pronósticos ----
+  const bets = m.bets || {};
+  const betList = Object.entries(bets).map(([pid, b]) => [byId(pid), pid, b]).filter(([p]) => p);
+  const open = betsOpen(m);
+  const bd = ui.bet[m.id] || (ui.bet[m.id] = { pid: '', winner: '', a: '', b: '' });
+  const nameA = m.teamAName;
+  const WIN = { A: nameA, B: nameB, E: 'Empate' };
+  const free = s.players.filter((p) => !p.guest && !bets[p.id]).sort((x, y) => label(x).localeCompare(label(y), 'es'));
+  const betsBody = h('div', { class: 'card bets' });
+  const paintBets = () => {
+    const rows = betList.length
+      ? h('ul', { class: 'bet-list' }, betList.map(([p, pid, b]) => h('li', {},
+        h('strong', {}, label(p)), h('span', { class: 'muted' }, ` → ${WIN[b.winner]}${Number.isInteger(b.a) ? ` (${b.a}-${b.b})` : ''}`),
+        m.closed ? h('span', { class: 'tag bet-pts' }, `+${betPoints(m, b)}`) : null,
+        store.canAdmin() ? h('button', { class: 'ghost small', onclick: async () => {
+          if (await confirmDialog('¿Borrar este pronóstico?', { okLabel: 'Borrar', danger: true })) store.removeBet(m.id, pid);
+        } }, 'Borrar') : null)))
+      : h('p', { class: 'muted' }, 'Todavía nadie pronosticó.');
+    if (!open) {
+      betsBody.replaceChildren(h('p', { class: 'muted' }, m.closed ? 'Pronósticos cerrados. Puntos: 3 exacto, 1 ganador.' : 'Pronósticos cerrados: ya se cargó el primer gol.'), rows);
+      return;
+    }
+    const sel = h('select', { 'aria-label': 'Quién pronostica', onchange: (e) => { bd.pid = e.target.value; } },
+      h('option', { value: '' }, 'Elegí tu nombre'), free.map((p) => h('option', { value: p.id }, label(p))));
+    sel.value = free.some((p) => p.id === bd.pid) ? bd.pid : '';
+    const wBtns = ['A', 'E', 'B'].map((w) => h('button', {
+      type: 'button', class: `seg-btn${bd.winner === w ? ' on' : ''}`, 'aria-pressed': String(bd.winner === w),
+      onclick: () => { bd.winner = bd.winner === w ? '' : w; paintBets(); },
+    }, WIN[w]));
+    const ina = h('input', { type: 'number', min: 0, max: 99, inputmode: 'numeric', placeholder: nameA, 'aria-label': `Goles ${nameA}`, value: bd.a, oninput: (e) => { bd.a = e.target.value; } });
+    const inb = h('input', { type: 'number', min: 0, max: 99, inputmode: 'numeric', placeholder: nameB, 'aria-label': `Goles ${nameB}`, value: bd.b, oninput: (e) => { bd.b = e.target.value; } });
+    const err = h('p', { class: 'muted', role: 'alert' });
+    betsBody.replaceChildren(
+      h('p', { class: 'muted small-note' }, 'Se cierran con el primer gol. 3 puntos por el resultado exacto, 1 por acertar quién gana.'),
+      h('div', { class: 'bet-pick' }, sel),
+      h('div', { class: 'seg-btns bet-win', role: 'group', 'aria-label': 'Quién gana' }, wBtns),
+      h('div', { class: 'row bet-score' }, ina, h('span', {}, '-'), inb, h('span', { class: 'muted' }, '(opcional)')),
+      err,
+      h('button', { type: 'button', onclick: () => {
+        if (!bd.pid) { err.textContent = 'Elegí tu nombre.'; return; }
+        if (!bd.winner) { err.textContent = 'Elegí quién gana o si empatan.'; return; }
+        if (store.placeBet(m.id, bd.pid, { winner: bd.winner, a: bd.a, b: bd.b })) { ui.bet[m.id] = null; toast('🎯 Pronóstico guardado.'); }
+        else err.textContent = 'No se pudo: revisá que el resultado coincida con lo que elegiste.';
+      } }, 'Pronosticar'),
+      rows);
+  };
+  paintBets();
+
   // ---- Acciones del partido ----
   const actions = h('div', { class: 'row wrap center' },
     h('button', { class: 'ghost', onclick: async () => {
@@ -339,6 +387,7 @@ export function renderMatch(root, id) {
         locked ? null : h('div', { class: 'row' },
           h('button', { class: 'ghost own-btn', onclick: openOwnGoal }, '🙈 Agregar gol en contra'))),
       { open: true, cls: 'sec' }),
+    collapsible(`bt:${m.id}`, h('h2', { class: 'fold-h2' }, `🎯 Pronósticos (${betList.length})`), betsBody, { open, cls: 'sec' }),
     collapsible(`cm:${m.id}`, h('h2', { class: 'fold-h2' }, `Comentarios (${m.comments.length})`),
       h('div', { class: 'card' }, comments), { open: true, cls: 'sec' }),
     actions);

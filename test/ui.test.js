@@ -1,4 +1,4 @@
-// Prueba de interfaz sin navegador: renderiza las vistas reales con jsdom y simula uso.
+﻿// Prueba de interfaz sin navegador: renderiza las vistas reales con jsdom y simula uso.
 import { test, before } from 'node:test';
 import assert from 'node:assert/strict';
 import { JSDOM } from 'jsdom';
@@ -871,3 +871,46 @@ test('armar equipos: tocar dos veces el mismo A o B lo deselecciona', () => {
   btn('A').click();
   unsub();
 });
+
+test('pronósticos: un jugador por vez, cierran con el primer gol y puntúan al finalizar', async () => {
+  const { betsOpen, betPoints } = await import('../src/domain/domain.js');
+  const s = store.get();
+  const open = store.createMatch({ date: '2099-01-01', teamAName: 'Vinotinto', teamBName: 'Blanco' });
+  const plantel = s.players.filter((p) => !p.guest);
+  const guest = s.players.find((p) => p.guest);
+  assert.ok(plantel.length >= 3);
+  assert.equal(betsOpen(store.match(open.id)), true);
+
+  assert.equal(store.placeBet(open.id, plantel[0].id, { winner: 'A', a: 2, b: 1 }), true);
+  assert.equal(store.placeBet(open.id, plantel[0].id, { winner: 'B' }), false, 'una sola vez');
+  assert.equal(store.placeBet(open.id, plantel[1].id, { winner: 'A', a: 0, b: 1 }), false, 'marcador incoherente');
+  assert.equal(store.placeBet(open.id, plantel[1].id, { winner: 'X' }), false);
+  if (guest) assert.equal(store.placeBet(open.id, guest.id, { winner: 'A' }), false, 'invitados no');
+  assert.equal(store.placeBet(open.id, plantel[1].id, { winner: 'E' }), true);
+
+  // La pantalla muestra la sección y los pronósticos.
+  renderMatch(root, open.id);
+  assert.match(root.textContent, /Pronósticos \(2\)/);
+
+  // Con el primer gol se cierran.
+  const scorerA = plantel[5].id;
+  store.setTeamSide(open.id, scorerA, 'A');
+  assert.ok(store.addGoal(open.id, 'A', scorerA));
+  assert.equal(betsOpen(store.match(open.id)), false);
+  assert.equal(store.placeBet(open.id, plantel[2].id, { winner: 'A' }), false, 'cerrado tras el gol');
+
+  // Puntos al finalizar: ganó A 1-0. El primero acertó ganador (1), el segundo no (0).
+  store.closeMatch(open.id);
+  const mm = store.match(open.id);
+  assert.equal(betPoints(mm, mm.bets[plantel[0].id]), 1);
+  assert.equal(betPoints(mm, mm.bets[plantel[1].id]), 0);
+  assert.equal(betPoints(mm, { winner: 'A', a: 1, b: 0 }), 3);
+  const st = computeStats(store.get().players, store.get().matches);
+  assert.equal(st[plantel[0].id].adivino >= 1, true);
+  assert.equal(st[plantel[1].id].pronos >= 1, true);
+  assert.ok(RANK_CATS.adivino, 'existe la categoría El Adivino');
+});
+
+
+
+
