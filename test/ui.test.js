@@ -444,14 +444,15 @@ test('con la nube y sin admin: un finalizado no se puede reabrir ni eliminar, y 
     assert.ok(!texts.some((t) => t === 'Eliminar'));
     assert.doesNotMatch(root.textContent, /bloqueados/); // sin aviso debajo del resultado
     assert.equal(root.querySelectorAll('.act').length, 0);
-    // Como admin: se edita sin reabrir, y aparecen Reabrir y Eliminar.
+    // Como admin: sigue bloqueado (para corregir hay que reabrir), y aparecen Reabrir y Eliminar.
     store.setAdmin(true);
     renderMatch(root, closed.id);
     const t2 = [...root.querySelectorAll('button')].map((b) => b.textContent);
     assert.ok(t2.some((t) => /Reabrir/.test(t)));
     assert.ok(t2.includes('Eliminar'));
-    assert.ok(root.querySelectorAll('.act').length > 0, 'el admin tiene los botones de gol');
-    assert.match(root.textContent, /sos el administrador/);
+    assert.equal(root.querySelectorAll('.act').length, 0, 'ni el admin carga goles en un partido finalizado');
+    assert.match(root.textContent, /tocá 🔓 Reabrir/, 'le explica cómo corregirlo');
+    assert.equal(store.addGoal(closed.id, 'A', closed.teamA[0]), null);
   } finally {
     store.detachSync();
   }

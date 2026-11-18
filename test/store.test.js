@@ -209,7 +209,8 @@ test('editar un gol: cambiar de goleador, pasarlo a en contra y respetar las asi
   assert.equal(store.updateGoal(m.id, g.id, { scorerId: b.id }), 'ok');          // lo hizo Dos
   assert.equal(store.match(m.id).events[0].scorerId, b.id);
   assert.equal(store.updateGoal(m.id, g.id, { scorerId: c.id }), 'invalid');     // Tres es del otro equipo
-  assert.equal(store.updateGoal(m.id, g.id, { scorerId: '' }), 'invalid');       // un gol normal necesita jugador
+  assert.equal(store.updateGoal(m.id, g.id, { scorerId: '' }), 'ok');            // sin jugador = gol sin autor
+  assert.equal(store.updateGoal(m.id, g.id, { scorerId: b.id }), 'ok');          // y se vuelve a completar
 
   // Pasarlo a "en contra": ahora lo hizo alguien de B (suma para A) y deja de ser gol de Dos.
   assert.equal(store.updateGoal(m.id, g.id, { ownGoal: true, scorerId: c.id }), 'ok');

@@ -101,8 +101,9 @@ function commitLocal() {
 const match = (id) => state.matches.find((m) => m.id === id);
 // Administrador logueado (con la nube). Como en el original: puede editar partidos finalizados.
 let admin = false;
-// Un partido finalizado solo admite comentarios, salvo para el admin.
-const editable = (m) => !!m && (!m.closed || admin);
+// Un partido finalizado solo admite comentarios, para todos (también el admin): para corregirlo,
+// el admin lo reabre primero. Así no se carga un gol sin querer en un partido viejo.
+const editable = (m) => !!m && !m.closed;
 
 function shuffled(arr) {
   const a = [...arr];

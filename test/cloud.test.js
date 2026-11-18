@@ -423,7 +423,7 @@ test('isAdminUser: el email del admin o la marca app_metadata (que el usuario no
   assert.equal(isAdminUser(null), false);
 });
 
-test('admin logueado: puede editar partidos finalizados; al salir vuelve a quedar bloqueado', async () => {
+test('admin logueado: para editar un partido finalizado primero lo reabre; al salir no puede reabrir', async () => {
   const db = fakeSupabase({ players: [player('a', 'Ana')], matches: [{ id: 'c1', date: '2026-01-01', teamA: ['a'], teamB: [], events: [], assists: {}, comments: [], closed: true }] });
   const a = withAuth(db, { email: 'leandroarmonelli@gmail.com' });
   const cloud = createCloud({ createClient: () => a.client, timers: noTimers });
@@ -431,8 +431,9 @@ test('admin logueado: puede editar partidos finalizados; al salir vuelve a queda
   await session.connect(CFG);
   assert.equal(store.isAdmin(), true);
   assert.equal(store.canAdmin(), true);
-  assert.ok(store.addGoal('c1', 'A', 'a'), 'el admin carga un gol en un partido finalizado');
+  assert.equal(store.addGoal('c1', 'A', 'a'), null, 'finalizado: ni el admin carga goles sin reabrir');
   assert.equal(store.reopenMatch('c1'), true);
+  assert.ok(store.addGoal('c1', 'A', 'a'), 'ya reabierto, el admin corrige');
   store.closeMatch('c1');
   await cloud.signOut();
   assert.equal(store.isAdmin(), false);

@@ -28,8 +28,9 @@ export function renderMatch(root, id) {
   }
   const s = store.get();
   // Finalizado = bloqueado, salvo para el admin logueado (como en el original).
-  const adminEdit = m.closed && store.isAdmin();
-  const locked = m.closed && !adminEdit;
+  // Finalizado = bloqueado para todos. El admin ve cómo corregirlo: reabrir primero.
+  const adminEdit = m.closed && store.canAdmin() && store.isSynced();
+  const locked = m.closed;
   const rivalMode = m.mode === 'rival';
   const nameB = rivalMode ? m.rivalName : m.teamBName;
   const byId = (pid) => s.players.find((p) => p.id === pid);
@@ -122,7 +123,7 @@ export function renderMatch(root, id) {
       h('span', { class: 'bteam' }, nameB)),
     h('p', { class: 'muted center' },
       `${fmtDate(m.date)} · ${rivalMode ? 'Contra rival' : 'Interno'} · ${m.closed ? '🔒 Finalizado' : '● Abierto'}`),
-    adminEdit ? h('p', { class: 'admin-note center' }, '👑 Finalizado, pero lo podés editar porque sos el administrador.') : null,
+    adminEdit ? h('p', { class: 'admin-note center' }, '👑 Para corregir este partido, tocá 🔓 Reabrir (abajo) y después volvé a finalizarlo.') : null,
     locked ? null
       : h('div', { class: 'row center wrap' },
         rivalMode ? h('button', { class: 'rival-goal', onclick: rivalGoal }, `⚽ Gol de ${m.rivalName}`) : null,
