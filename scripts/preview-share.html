@@ -1,0 +1,19 @@
+<!doctype html>
+<html><body style="margin:0;background:#222">
+<img id="out" style="display:block;width:540px">
+<script type="module">
+import { drawSummary } from '../src/ui/share.js';
+const P = (id, name, guest = false) => ({ id, name, nickname: '', number: '', positions: [], guest });
+const players = [P('1', 'Lean'), P('2', 'Fran'), P('3', 'Willy'), P('4', 'Pedro Aubone'), P('5', 'Samez'), P('6', 'Maika'), P('7', 'Fede'), P('8', 'Fernando'), P('9', 'Tuti'), P('10', 'Invitado Juan', true), P('11', 'Gonza'), P('12', 'Bruno'), P('13', 'Lucho'), P('14', 'Santi')];
+const m = {
+  id: 'x', date: '2026-11-17', mode: 'interno', teamAName: 'Vinotinto', teamBName: 'Blanco', rivalName: '',
+  teamA: ['1', '2', '3', '7', '9', '10', '13'], teamB: ['4', '5', '6', '8', '11', '12', '14'],
+  events: [
+    { id: 'a', side: 'A', scorerId: '1' }, { id: 'b', side: 'A', scorerId: '2' }, { id: 'c', side: 'A', scorerId: '2' }, { id: 'd', side: 'A', scorerId: '3' },
+    { id: 'e', side: 'B', scorerId: '4' }, { id: 'f', side: 'B', scorerId: '5' }, { id: 'g', side: 'B', scorerId: '6', ownGoal: true }, { id: 'h', side: 'B', scorerId: null },
+  ],
+  assists: {}, comments: [], closed: true, mvpId: '1', gkId: '7', golazoId: '3', muroId: '7', hachazoId: '8',
+};
+document.getElementById('out').src = drawSummary(m, players).toDataURL('image/png');
+</script>
+</body></html>

@@ -952,3 +952,29 @@ test('gol sin autor: suma al resultado sin darle el gol a nadie, se deshace y se
   unsub();
   store.deleteMatch(m.id);
 });
+
+test('resumen para compartir: formaciones de cada equipo (invitados marcados), goles sin autor y premios', async () => {
+  const { summaryContent } = await import('../src/ui/share.js');
+  const s = store.get();
+  const [a, b, c] = s.players.filter((p) => !p.guest);
+  const guest = { id: 'g-res', name: 'Invitado Juan', nickname: '', number: '', positions: [], guest: true };
+  const players = [...s.players, guest];
+  const m = {
+    id: 'res1', date: '2026-11-17', mode: 'interno', teamAName: 'Claros', teamBName: 'Oscuros', rivalName: '',
+    teamA: [a.id, guest.id], teamB: [b.id, c.id],
+    events: [{ id: 'e1', side: 'A', scorerId: a.id }, { id: 'e2', side: 'A', scorerId: a.id }, { id: 'e3', side: 'B', scorerId: null }, { id: 'e4', side: 'B', scorerId: a.id, ownGoal: true }],
+    assists: {}, comments: [], closed: true, mvpId: b.id,
+  };
+  const r = summaryContent(m, players);
+  assert.equal(r.lineupA.length, 2);
+  assert.equal(r.lineupB.length, 2);
+  assert.ok(r.lineupA.some((x) => /Invitado Juan \(inv\.\)/.test(x)), 'el invitado va marcado');
+  assert.match(r.scorers[0], /x2$/);
+  assert.equal(r.unknown, 1, 'el gol sin autor se cuenta');
+  assert.equal(r.owners.length, 1);
+  assert.ok(r.awards.some((x) => /Figura/.test(x)));
+  // Contra un rival: solo la formación propia.
+  const rv = summaryContent({ ...m, mode: 'rival', rivalName: 'Los Guapos', teamB: [] }, players);
+  assert.equal(rv.nameB, 'Los Guapos');
+  assert.equal(rv.lineupB.length, 0);
+});

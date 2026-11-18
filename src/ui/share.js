@@ -1,25 +1,67 @@
-// Resumen del partido como imagen (1080x1350) para mandar por WhatsApp.
+// Resumen del partido como imagen (1080 de ancho; 1350 de alto o más si hay muchos jugadores)
+// para mandar por WhatsApp: resultado, formaciones, goles y premios.
 import { scoreOf, fmtDate, AWARDS, displayName } from '../domain/domain.js';
 import { TEAM } from '../team.js';
 
-function wrap(ctx, text, x, y, maxWidth, lineHeight) {
-  const words = text.split(' ');
+const TITLE = 'PIEL MORENA FC';
+const SHARE_TITLE = 'Piel Morena FC';
+const FILE_PREFIX = 'piel-morena';
+
+const W = 1080;
+const MIN_H = 1350;
+const LINEUP_LINE = 46; // alto de cada renglón de las formaciones
+const TEXT_LINE = 56;
+
+// Corta un texto en renglones que entren en maxWidth (con la medida de ctx).
+function wrapLines(ctx, text, maxWidth) {
+  const lines = [];
   let line = '';
-  for (const w of words) {
+  for (const w of text.split(' ')) {
     const test = line ? `${line} ${w}` : w;
-    if (ctx.measureText(test).width > maxWidth && line) { ctx.fillText(line, x, y); line = w; y += lineHeight; } else line = test;
+    if (ctx.measureText(test).width > maxWidth && line) { lines.push(line); line = w; } else line = test;
   }
-  ctx.fillText(line, x, y);
-  return y + lineHeight;
+  if (line) lines.push(line);
+  return lines;
+}
+
+// Qué va en la imagen (sin dibujar): formaciones, goles y premios. Sirve también para los tests.
+export function summaryContent(m, players) {
+  const byId = (id) => players.find((x) => x.id === id);
+  const label = (id) => { const p = byId(id); return p ? `${displayName(p)}${p.guest ? ' (inv.)' : ''}` : null; };
+  const lineup = (ids) => (ids || []).map(label).filter(Boolean);
+  const rival = m.mode === 'rival';
+  const scorers = new Map();
+  m.events.forEach((e) => { if (e.scorerId && !e.ownGoal) scorers.set(e.scorerId, (scorers.get(e.scorerId) || 0) + 1); });
+  const unknown = m.events.filter((e) => !e.scorerId && !e.ownGoal && !(rival && e.side === 'B')).length;
+  return {
+    nameA: m.teamAName,
+    nameB: rival ? m.rivalName : m.teamBName,
+    lineupA: lineup(m.teamA),
+    lineupB: rival ? [] : lineup(m.teamB),
+    scorers: [...scorers.entries()].map(([id, n]) => `${displayName(byId(id))}${n > 1 ? ` x${n}` : ''}`),
+    unknown,
+    owners: m.events.filter((e) => e.ownGoal && e.scorerId).map((e) => displayName(byId(e.scorerId))),
+    awards: Object.values(AWARDS).map((a) => [`${a.icon} ${a.short}`, m[a.field]]).filter(([, id]) => id).map(([l, id]) => `${l}: ${displayName(byId(id))}`),
+  };
 }
 
 export function drawSummary(m, players) {
-  const W = 1080;
-  const H = 1350;
+  const c = summaryContent(m, players);
   const canvas = document.createElement('canvas');
+  let ctx = canvas.getContext('2d');
+
+  // ---- Medir primero (el alto depende de cuántos jugadores y goles hay) ----
+  ctx.font = '500 42px system-ui, sans-serif';
+  const goalLines = c.scorers.length ? wrapLines(ctx, `⚽ ${c.scorers.join(' · ')}`, W - 160) : (c.unknown ? [] : ['Sin goles de jugadores']);
+  if (c.unknown) goalLines.push(`❔ Sin autor${c.unknown > 1 ? ` x${c.unknown}` : ''}`);
+  const ownLines = c.owners.length ? wrapLines(ctx, `🙈 En contra: ${c.owners.join(' · ')}`, W - 160) : [];
+  const rows = Math.max(c.lineupA.length, c.lineupB.length);
+  const lineupH = rows ? 70 + rows * LINEUP_LINE + 30 : 0;
+  const golesH = 60 + (goalLines.length + ownLines.length) * TEXT_LINE + (ownLines.length ? 6 : 0);
+  const premiosH = c.awards.length ? 40 + 60 + c.awards.length * 58 : 0;
+  const H = Math.max(MIN_H, 640 + lineupH + 60 + golesH + premiosH + 140);
   canvas.width = W; canvas.height = H;
-  const ctx = canvas.getContext('2d');
-  const name = (id) => { const p = players.find((x) => x.id === id); return displayName(p); };
+  ctx = canvas.getContext('2d'); // cambiar el tamaño reinicia el contexto
 
   const g = ctx.createLinearGradient(0, 0, 0, H);
   g.addColorStop(0, TEAM.color1);
@@ -30,51 +72,62 @@ export function drawSummary(m, players) {
   ctx.textAlign = 'center';
   ctx.fillStyle = TEAM.color2;
   ctx.font = '700 44px system-ui, sans-serif';
-  ctx.fillText('PIEL MORENA FC', W / 2, 110);
+  ctx.fillText(TITLE, W / 2, 110);
   ctx.font = '500 36px system-ui, sans-serif';
   ctx.fillStyle = '#ffffffcc';
   ctx.fillText(fmtDate(m.date), W / 2, 170);
 
-  const a = scoreOf(m, 'A');
-  const b = scoreOf(m, 'B');
-  const nameB = m.mode === 'rival' ? m.rivalName : m.teamBName;
   ctx.fillStyle = '#ffffff';
   ctx.font = '800 56px system-ui, sans-serif';
-  ctx.fillText(m.teamAName, W / 4, 330);
-  ctx.fillText(nameB, (W * 3) / 4, 330);
+  ctx.fillText(c.nameA, W / 4, 330);
+  ctx.fillText(c.nameB, (W * 3) / 4, 330);
   ctx.font = '900 200px system-ui, sans-serif';
-  ctx.fillText(`${a} : ${b}`, W / 2, 560);
+  ctx.fillText(`${scoreOf(m, 'A')} : ${scoreOf(m, 'B')}`, W / 2, 560);
 
-  // Goleadores
-  const scorers = new Map();
-  m.events.forEach((e) => { if (e.scorerId && !e.ownGoal) scorers.set(e.scorerId, (scorers.get(e.scorerId) || 0) + 1); });
-  const owners = m.events.filter((e) => e.ownGoal && e.scorerId).map((e) => name(e.scorerId));
-  let y = 700;
+  let y = 640;
+  // ---- Formaciones: cada equipo en su columna, debajo de su nombre ----
+  if (rows) {
+    ctx.fillStyle = TEAM.color2;
+    ctx.font = '700 40px system-ui, sans-serif';
+    ctx.fillText('FORMACIONES', W / 2, y + 30);
+    ctx.font = '500 34px system-ui, sans-serif';
+    ctx.fillStyle = '#ffffffdd';
+    const colW = W / 2 - 60;
+    const fit = (text) => { let t = text; while (t.length > 3 && ctx.measureText(t).width > colW) t = `${t.slice(0, -2)}…`; return t; };
+    const startY = y + 70 + 34;
+    c.lineupA.forEach((n, i) => ctx.fillText(fit(n), W / 4, startY + i * LINEUP_LINE));
+    c.lineupB.forEach((n, i) => ctx.fillText(fit(n), (W * 3) / 4, startY + i * LINEUP_LINE));
+    // línea que separa los dos equipos
+    ctx.strokeStyle = '#ffffff33';
+    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(W / 2, y + 70); ctx.lineTo(W / 2, y + 70 + rows * LINEUP_LINE); ctx.stroke();
+    y += lineupH;
+  }
+
+  // ---- Goles ----
+  y += 60;
   ctx.fillStyle = TEAM.color2;
   ctx.font = '700 40px system-ui, sans-serif';
   ctx.fillText('GOLES', W / 2, y); y += 60;
   ctx.fillStyle = '#ffffff';
   ctx.font = '500 42px system-ui, sans-serif';
-  if (scorers.size) {
-    const text = [...scorers.entries()].map(([id, n]) => `${name(id)}${n > 1 ? ` x${n}` : ''}`).join(' · ');
-    y = wrap(ctx, `⚽ ${text}`, W / 2, y, W - 160, 56);
-  } else { ctx.fillText('Sin goles de jugadores', W / 2, y); y += 56; }
-  if (owners.length) {
+  for (const l of goalLines) { ctx.fillText(l, W / 2, y); y += TEXT_LINE; }
+  if (ownLines.length) {
     ctx.fillStyle = '#ff9aa8';
-    y = wrap(ctx, `🙈 En contra: ${owners.join(' · ')}`, W / 2, y + 6, W - 160, 56);
+    y += 6;
+    for (const l of ownLines) { ctx.fillText(l, W / 2, y); y += TEXT_LINE; }
     ctx.fillStyle = '#ffffff';
   }
 
-  // Premios
-  const awards = Object.values(AWARDS).map((a) => [`${a.icon} ${a.short}`, m[a.field]]).filter(([, id]) => id);
-  if (awards.length) {
+  // ---- Premios ----
+  if (c.awards.length) {
     y += 40;
     ctx.fillStyle = TEAM.color2;
     ctx.font = '700 40px system-ui, sans-serif';
     ctx.fillText('PREMIOS', W / 2, y); y += 60;
     ctx.fillStyle = '#ffffff';
     ctx.font = '500 42px system-ui, sans-serif';
-    for (const [label, id] of awards) { ctx.fillText(`${label}: ${name(id)}`, W / 2, y); y += 58; }
+    for (const a of c.awards) { ctx.fillText(a, W / 2, y); y += 58; }
   }
 
   ctx.fillStyle = '#ffffff99';
@@ -88,9 +141,9 @@ export async function shareSummary(m, players) {
   const canvas = drawSummary(m, players);
   const blob = await new Promise((res) => canvas.toBlob(res, 'image/png'));
   if (!blob) return 'error';
-  const file = new File([blob], `piel-morena-${m.date || 'partido'}.png`, { type: 'image/png' });
+  const file = new File([blob], `${FILE_PREFIX}-${m.date || 'partido'}.png`, { type: 'image/png' });
   if (navigator.canShare?.({ files: [file] })) {
-    try { await navigator.share({ files: [file], title: 'Piel Morena FC' }); return 'shared'; }
+    try { await navigator.share({ files: [file], title: SHARE_TITLE }); return 'shared'; }
     catch (e) { if (e?.name === 'AbortError') return 'cancelled'; }
   }
   const url = URL.createObjectURL(blob);
