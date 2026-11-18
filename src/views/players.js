@@ -18,7 +18,7 @@ export function renderPlayers(root) {
 
   const card = (p) => h('li', {},
     h('button', { class: 'pcard', onclick: () => openPlayerSheet(p), 'aria-label': `Ver ficha de ${p.name}` },
-      avatarEl(p, TEAM, 56),
+      avatarEl(p, TEAM, 40),
       h('span', { class: 'pc-main' },
         playerName(p),
         playerPositions(p).length ? h('span', { class: 'muted' }, playerPositions(p).join(', ')) : null),

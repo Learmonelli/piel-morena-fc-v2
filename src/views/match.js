@@ -81,7 +81,7 @@ export function renderMatch(root, id) {
             ps.map((p) => h('button', {
               type: 'button', class: 'ghost pick-row',
               onclick: () => { ownGoal(p); close(); },
-            }, avatarEl(p, TEAM, 40), h('span', { class: 'pick-name' }, playerName(p)),
+            }, avatarEl(p, TEAM, 30), h('span', { class: 'pick-name' }, playerName(p)),
             h('span', { class: 'muted pick-note' }, `suma para ${beneficiary}`))));
         });
         fill(list, groups.some(Boolean) ? groups
@@ -124,7 +124,7 @@ export function renderMatch(root, id) {
   const teamsBox = h('div', { class: 'card teams-box' });
 
   const row = (p, side) => h('li', { class: 'prow' },
-    avatarEl(p, TEAM, 40),
+    avatarEl(p, TEAM, 30),
     // Contadores debajo del nombre: así el nombre usa todo el ancho y no se corta.
     h('div', { class: 'pinfo' }, playerName(p),
       h('span', {
@@ -186,7 +186,7 @@ export function renderMatch(root, id) {
         const head = cur !== prev ? h('li', { class: 'side-head', 'data-side': cur || 'none' },
           `${groupName(cur)} (${arr.filter((x) => (sideOf(m, x.id) || '') === cur).length})`) : null;
         return [head, h('li', { class: 'prow' },
-          avatarEl(p, TEAM, 32),
+          avatarEl(p, TEAM, 30),
           h('div', { class: 'pinfo' }, playerName(p)),
           h('div', { class: 'seg-btns', role: 'group', 'aria-label': `Equipo de ${p.name}` },
             choices.map(([val, text]) => h('button', {

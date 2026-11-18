@@ -201,3 +201,29 @@
 /* Instalar la app (en 💾) */
 .install-box { display: grid; gap: 6px; margin: 4px 0 12px; }
 .install-box .help-body p { margin: 0 0 6px; }
+
+/* ==== Versión compacta: tarjetas y listas más chicas para scrollear menos ==== */
+.card { padding: 10px 12px; margin-bottom: 8px; }
+.match-card { padding: 8px 12px; }
+.mc-top { margin-bottom: 4px; }
+.mc-result, [data-theme="pixel"] .mc-result { font-size: 28px; line-height: 1; }
+[data-theme="pixel"] .mc-team { font-size: 17px; }
+[data-theme="pixel"] .mc-top > .muted { font-size: 14px; }
+.match-card .tags .tag { padding: 1px 6px; }
+[data-theme="pixel"] .match-card .tags .tag { font-size: 13px; }
+
+/* Jugadores: dos columnas de tarjetas bajas en el celular */
+.pgrid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 6px; }
+.pcard { column-gap: 8px; padding: 6px 8px; min-height: 0; }
+[data-theme="pixel"] .pcard { font-size: 16px; }
+[data-theme="pixel"] .pcard strong { font-size: 17px; }
+[data-theme="pixel"] .pc-stats { font-size: 13px; }
+.pcard .nick { font-size: .8em; }
+
+/* Listas (armar equipos, plantel del partido, historial, ranking) */
+.prow { gap: 6px; padding: 4px 0; }
+.history li { gap: 6px; padding: 5px 0; }
+.rank-list li { gap: 6px; padding: 2px 0; }
+[data-theme="pixel"] .prow .pname, [data-theme="pixel"] .rank-list .pname { font-size: 17px; }
+.act { width: 42px; min-height: 42px; font-size: 1.15rem; border-radius: 10px; }
+.acts { gap: 4px; }

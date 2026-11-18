@@ -48,7 +48,7 @@ export function renderRanking(root) {
     const list = rest.length
       ? h('ul', { class: 'card rank-list' }, rest.map((r) => h('li', {},
         h('span', { class: 'rpos' }, `${r.pos}°`),
-        h('button', { class: 'linklike inline', onclick: () => open(r.player) }, avatarEl(r.player, TEAM, 36, 'bust'), playerName(r.player)),
+        h('button', { class: 'linklike inline', onclick: () => open(r.player) }, avatarEl(r.player, TEAM, 30, 'bust'), playerName(r.player)),
         h('span', { class: 'rval' }, String(r.value), avg(r)))))
       : null;
 
