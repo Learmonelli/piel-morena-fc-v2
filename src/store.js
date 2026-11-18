@@ -237,6 +237,16 @@ export const store = {
     commit();
     return ev;
   },
+  // Gol sin autor ("no me acuerdo quién lo hizo"): suma al resultado y a nadie en particular.
+  // Después se puede editar y elegir al goleador.
+  addUnknownGoal(matchId, side) {
+    const m = match(matchId);
+    if (!editable(m) || !['A', 'B'].includes(side)) return null;
+    const ev = { id: uid(), side, scorerId: null };
+    m.events.push(ev);
+    commit();
+    return ev;
+  },
   // Gol en contra: lo hizo `pid` en su propio arco, así que suma para el equipo contrario.
   addOwnGoal(matchId, pid) {
     const m = match(matchId);
@@ -258,9 +268,13 @@ export const store = {
     // Un gol normal lo hace alguien del equipo que suma; uno en contra, alguien del otro.
     const scorerSide = own ? opposite(ev.side) : ev.side;
     let who = scorerId || null;
-    if (own || !rivalSide) {
+    if (own) {
       if (!who || sideOf(m, who) !== scorerSide) return 'invalid';
-    } else who = null; // gol del rival: sin jugador
+    } else if (rivalSide) {
+      who = null; // gol del rival: sin jugador
+    } else if (who && sideOf(m, who) !== scorerSide) {
+      return 'invalid'; // sin jugador = gol sin autor (vale)
+    }
     const prev = { ...ev };
     ev.scorerId = who;
     if (own) ev.ownGoal = true; else delete ev.ownGoal;

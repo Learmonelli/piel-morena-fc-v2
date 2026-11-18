@@ -914,3 +914,40 @@ test('pronósticos: un jugador por vez, cierran con el primer gol y puntúan al 
 
 
 
+
+test('gol sin autor: suma al resultado sin darle el gol a nadie, se deshace y se completa después', () => {
+  const s = store.get();
+  const m = store.createMatch({ date: '2099-02-02', teamAName: 'Claros', teamBName: 'Oscuros' });
+  const [a, b] = s.players.filter((p) => !p.guest);
+  store.setTeamSide(m.id, a.id, 'A');
+  store.setTeamSide(m.id, b.id, 'B');
+  const before = computeStats(store.get().players, store.get().matches);
+
+  const ev = store.addUnknownGoal(m.id, 'A');
+  assert.ok(ev);
+  assert.equal(ev.scorerId, null);
+  assert.equal(scoreOf(store.match(m.id), 'A'), 1, 'suma al resultado');
+  const after = computeStats(store.get().players, store.get().matches);
+  assert.equal(after[a.id].goles, before[a.id].goles, 'no se le suma a nadie');
+
+  // En pantalla: botón por equipo y la fila marcada "sin autor".
+  const unsub = store.subscribe(() => renderMatch(root, m.id));
+  renderMatch(root, m.id);
+  assert.ok(root.querySelector('.unknown-goal[data-side="B"]'));
+  root.querySelector('.unknown-goal[data-side="B"]').click();
+  assert.equal(scoreOf(store.match(m.id), 'B'), 1);
+  assert.ok([...root.querySelectorAll('.ev .pill')].some((p) => /sin autor/.test(p.textContent)));
+  const undo = [...toasts.querySelectorAll('button')].find((x) => x.textContent === 'Deshacer');
+  undo.click();
+  assert.equal(scoreOf(store.match(m.id), 'B'), 0);
+
+  // Se completa después: elegir al goleador, y un jugador del otro equipo no vale.
+  assert.equal(store.updateGoal(m.id, ev.id, { scorerId: b.id }), 'invalid');
+  assert.equal(store.updateGoal(m.id, ev.id, { scorerId: a.id }), 'ok');
+  assert.equal(computeStats(store.get().players, store.get().matches)[a.id].goles, before[a.id].goles + 1);
+  // ...y se puede volver a dejar sin autor.
+  assert.equal(store.updateGoal(m.id, ev.id, { scorerId: null }), 'ok');
+  assert.equal(scoreOf(store.match(m.id), 'A'), 1);
+  unsub();
+  store.deleteMatch(m.id);
+});

@@ -44,6 +44,15 @@ export function renderMatch(root, id) {
       actionLabel: 'Deshacer', onAction: () => { store.removeGoal(m.id, ev.id); sfx('undo'); },
     });
   };
+  // Gol sin autor: suma al resultado aunque no se acuerden quién lo hizo (después se puede completar con ✎).
+  const unknownGoal = (side) => {
+    const ev = store.addUnknownGoal(m.id, side);
+    if (!ev) return;
+    sfx('goal'); buzz();
+    toast(`⚽ Gol de ${side === 'A' ? m.teamAName : nameB} (sin autor)`, {
+      actionLabel: 'Deshacer', onAction: () => { store.removeGoal(m.id, ev.id); sfx('undo'); },
+    });
+  };
   const assist = (p) => {
     if (!store.addAssist(m.id, p.id)) {
       toast('Primero cargá el gol: no puede haber más asistencias que goles.');
@@ -117,6 +126,8 @@ export function renderMatch(root, id) {
     locked ? null
       : h('div', { class: 'row center wrap' },
         rivalMode ? h('button', { class: 'rival-goal', onclick: rivalGoal }, `⚽ Gol de ${m.rivalName}`) : null,
+        h('button', { class: 'ghost unknown-goal', 'data-side': 'A', onclick: () => unknownGoal('A') }, `⚽ ${m.teamAName}: sin autor`),
+        rivalMode ? null : h('button', { class: 'ghost unknown-goal', 'data-side': 'B', onclick: () => unknownGoal('B') }, `⚽ ${nameB}: sin autor`),
         m.events.length ? h('button', { class: 'ghost', onclick: undoLast }, '↩ Deshacer último') : null));
 
   // ---- Buscador de jugadores del partido ----
@@ -217,10 +228,12 @@ export function renderMatch(root, id) {
     const team = ev.side === 'A' ? m.teamAName : nameB; // equipo al que suma el gol
     // Se lee como se dice en la cancha: "Gol de Blanco, en contra de Tuti".
     const who = ev.ownGoal ? `🙈 Gol de ${team}` : `⚽ ${p ? label(p) : `Gol de ${team}`}`;
+    const unknown = !ev.ownGoal && !p && !(rivalMode && ev.side === 'B');
     return h('li', { class: 'ev' },
       h('span', {}, `${i + 1}. ${who}`),
       ev.ownGoal ? h('span', { class: 'pill loss' }, p ? `en contra de ${label(p)}` : 'en contra') : null,
       ev.ownGoal ? null : h('span', { class: 'muted' }, ` · ${team}`),
+      unknown ? h('span', { class: 'pill' }, 'sin autor') : null,
       locked ? null : h('span', { class: 'ev-actions' },
         h('button', { class: 'ghost small', 'aria-label': `Editar el gol ${i + 1}`, onclick: () => openEditGoal(ev) }, '✎'),
         h('button', { class: 'ghost small', 'aria-label': `Quitar el gol ${i + 1}`, onclick: () => { store.removeGoal(m.id, ev.id); sfx('undo'); } }, '✕')));
@@ -245,6 +258,7 @@ export function renderMatch(root, id) {
         const keep = (!!ev.ownGoal === state.own) ? ev.scorerId : '';
         fill(sel,
           !state.own && rivalSide ? h('option', { value: '' }, 'Gol del rival (sin jugador)') : null,
+          !state.own && !rivalSide ? h('option', { value: '' }, '— Sin autor (no me acuerdo) —') : null,
           state.own ? h('option', { value: '' }, '— Elegí el jugador —') : null,
           list.map((p) => h('option', { value: p.id, selected: p.id === keep }, label(p))));
         note.textContent = state.own
@@ -267,7 +281,7 @@ export function renderMatch(root, id) {
             const r = store.updateGoal(m.id, ev.id, { ownGoal: state.own, scorerId: sel.value });
             if (r === 'ok') { close(); toast('Gol actualizado.'); }
             else if (r === 'assists') err.textContent = 'No se puede: quedarían más asistencias que goles. Quitá una asistencia primero.';
-            else err.textContent = state.own ? 'Elegí quién hizo el gol en contra.' : 'Elegí el goleador.';
+            else err.textContent = state.own ? 'Elegí quién hizo el gol en contra.' : 'Elegí un jugador de ese equipo.';
           } }, 'Guardar')));
     });
   }
