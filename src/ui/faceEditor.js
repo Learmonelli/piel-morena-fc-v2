@@ -17,9 +17,8 @@ export function faceEditor(seed, initial) {
   const controls = [];
 
   const paint = () => {
-    preview.replaceChildren(
-      avatarSVGEl(seed, 96, face, 'body', 'Vista previa del jugador'),
-      avatarSVGEl(seed, 64, face, 'bust', 'Vista previa del carnet'));
+    // Una sola vista previa: el jugador entero (el busto no hace falta y ocupaba lugar).
+    preview.replaceChildren(avatarSVGEl(seed, 72, face, 'body', 'Vista previa del jugador'));
     for (const c of controls) {
       const on = face[c.key] === c.val;
       c.el.classList.toggle('on', on);

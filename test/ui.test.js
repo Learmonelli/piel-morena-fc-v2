@@ -1,4 +1,4 @@
-﻿// Prueba de interfaz sin navegador: renderiza las vistas reales con jsdom y simula uso.
+// Prueba de interfaz sin navegador: renderiza las vistas reales con jsdom y simula uso.
 import { test, before } from 'node:test';
 import assert from 'node:assert/strict';
 import { JSDOM } from 'jsdom';
@@ -724,7 +724,7 @@ test('editor de cara: abre con la cara actual, cambia la vista previa y guarda',
   const dlg = document.querySelector('dialog.sheet');
   const pressed = (label) => dlg.querySelector(`[role="group"][aria-label="${label}"] [aria-pressed="true"]`);
   assert.ok(dlg.querySelector('.face-preview svg.pixel-avatar'));
-  assert.equal(dlg.querySelectorAll('.face-preview svg').length, 2); // cuerpo + carnet
+  assert.equal(dlg.querySelectorAll('.face-preview svg').length, 1); // una sola: el jugador entero (sin busto)
   assert.equal(dlg.querySelectorAll('details.face-group').length, 4); // Rostro, Pelo y piel, Cabeza, Camiseta
   // Arranca marcando la cara que el jugador ya tiene.
   const cur = resolveFace(p.id, p.face);

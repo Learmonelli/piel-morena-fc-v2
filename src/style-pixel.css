@@ -227,3 +227,18 @@
 [data-theme="pixel"] .prow .pname, [data-theme="pixel"] .rank-list .pname { font-size: 17px; }
 .act { width: 42px; min-height: 42px; font-size: 1.15rem; border-radius: 10px; }
 .acts { gap: 4px; }
+
+/* ==== Editor de cara compacto: categorías, botones y colores más chicos ==== */
+.face-editor { gap: 6px; margin-bottom: 8px; }
+.face-preview { padding: 4px 0; gap: 8px; }
+.face-controls { gap: 4px; }
+.face-row { gap: 4px; padding: 0 2px 3px; margin-top: 3px; }
+.face-lbl, [data-theme="pixel"] .face-lbl { min-width: 46px; font-size: .72rem; }
+[data-theme="pixel"] .face-lbl { font-size: 13px; }
+.face-pill, [data-theme="pixel"] .face-pill { min-height: 28px; padding: 0 8px; font-size: .8rem; border-radius: 7px; }
+[data-theme="pixel"] .face-pill { font-size: 15px; box-shadow: none; }
+.swatch, [data-theme="pixel"] .swatch { width: 24px; height: 24px; border-radius: 5px; box-shadow: none; }
+.face-group { padding: 0 8px; border-radius: 8px; }
+.face-group > summary { min-height: 30px; }
+[data-theme="pixel"] .face-group > summary { font-size: 8px; }
+.face-editor > button.ghost.small { min-height: 30px; }
